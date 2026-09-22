@@ -61,11 +61,13 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. SOLUSI ROOT CAUSE: Hapus konfigurasi crDroid yang cacat
-          # Sistem akan otomatis beralih menggunakan milik LineageOS yang 100% sehat
+          # 1. Hapus Android.bp milik crDroid yang cacat variabel
           rm -f vendor/crdroid/build/soong/Android.bp
           
-          # 2. Atasi bentrok nama modul sisanya di luar folder soong
+          # 2. Transplantasi modul baterai (dummy) ke dalam file Lineage yang sehat
+          echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/lineage/build/soong/Android.bp
+          
+          # 3. Ganti nama modul yang bentrok di tempat lain
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
