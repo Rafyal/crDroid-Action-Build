@@ -58,16 +58,18 @@ jobs:
         run: |
           cd ~/crdroid
           
-          # Validasi akhir untuk memastikan vendor crDroid sudah terunduh
-          if [ ! -f vendor/crdroid/config/common.mk ]; then
-            echo "ERROR FATAL: vendor/crdroid/config/common.mk masih hilang! Sync gagal total."
-            exit 1
+          # Paksa buat symlink atau cek letak folder vendor crDroid yang sebenarnya
+          if [ ! -d "vendor/crdroid" ]; then
+            git clone --depth=1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
           fi
+          
+          # Tampilkan isi direktori vendor untuk memastikan jalurnya benar
+          ls -la vendor/
+          ls -la vendor/crdroid/ || true
 
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
           mka bacon
-
 
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
