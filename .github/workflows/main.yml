@@ -60,18 +60,19 @@ jobs:
         run: |
           set +e
           cd ~/crdroid
-      
-          # OPERASI BEDAH: Ubah nama modul Lineage yang bentrok dengan crDroid
-          # agar tidak "already defined" tanpa merusak modul 'health_charging_control'
-          sed -i 's/name: "soong-lineage-generator"/name: "soong-lineage-generator-dup"/g' vendor/lineage/build/soong/Android.bp || true
+          
+          # 1. Hapus total folder soong milik lineage karena puluhan isinya bentrok
+          rm -rf vendor/lineage/build/soong
+          
+          # 2. Ganti nama 2 modul spesifik yang masih bentrok di luar folder soong
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
-      
+          
           source build/envsetup.sh
-      
+          
           echo "=== EKSEKUSI LUNCH ==="
           lunch crdroid_X663-userdebug
-      
+          
           echo "=== MULAI KOMPILASI ==="
           mka bacon
       
