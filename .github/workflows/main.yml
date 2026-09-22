@@ -51,8 +51,8 @@ jobs:
           git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
 
-      - name: Build ROM
-          - name: Build ROM (Mode Investigasi)
+
+      - name: Build ROM (Mode Investigasi)
         run: |
           cd ~/crdroid
           
