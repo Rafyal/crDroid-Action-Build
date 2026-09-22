@@ -58,12 +58,17 @@ jobs:
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
       - name: Build ROM
         run: |
+          set +e  # Melumpuhkan fitur auto-kill bash bawaan GitHub
           cd ~/crdroid
+          
+          echo "=== LOAD ENVSETUP ==="
           source build/envsetup.sh
           
-          echo "=== MEMULAI LUNCH ==="
-          lunch crdroid_X663-userdebug || true
-          echo "=== SELESAI LUNCH ==="
+          echo "=== EKSEKUSI LUNCH ==="
+          lunch crdroid_X663-userdebug
+          
+          echo "=== MULAI KOMPILASI ==="
+          mka bacon
           
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
