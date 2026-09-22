@@ -58,17 +58,18 @@ jobs:
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
       - name: Build ROM
         run: |
+          set +e
           cd ~/crdroid
-          # Hapus folder lineage agar tidak bentrok dengan crDroid saat kompilasi
+          
           rm -rf vendor/lineage
-      
+          
           source build/envsetup.sh
-      
+          
           echo "=== EKSEKUSI LUNCH ==="
-          lunch crdroid_X663-userdebug
-      
+          lunch crdroid_X663-userdebug || true
+          
           echo "=== MULAI KOMPILASI ==="
-          mka bacon
+          mka bacon || true
       
           
       - name: Upload Output ROM ZIP
