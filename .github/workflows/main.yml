@@ -1,4 +1,4 @@
-name: crDroid Build for Infinix Note 11 (X663)
+name: crDroid Build (Free Tier Survival)
 
 on:
   workflow_dispatch:
@@ -6,11 +6,22 @@ on:
 jobs:
   build:
     name: Build ROM
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+
+      - name: Membajak Ruang Penyimpanan (Free Disk Space)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
 
       - name: Set up Environment
         run: |
@@ -24,33 +35,28 @@ jobs:
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: Initialize & Sync crDroid Source (Android 12)
+      - name: Initialize & Sync crDroid (Shallow Clone)
         run: |
           mkdir -p ~/crdroid
           cd ~/crdroid
           git config --global user.name "Rafyal"
           git config --global user.email "rafyal991@gmail.com"
-          # Inisialisasi crDroid cabang 12.1 (Android 12)
+          # --depth=1 sangat krusial agar kita tidak mengunduh riwayat git, menghemat puluhan GB
           repo init -u https://github.com/crdroidandroid/android.git -b 12.1 --depth=1
           repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
 
       - name: Clone Device, Vendor & Kernel Trees
         run: |
           cd ~/crdroid
-          # Clone Device Tree
-          git clone https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
-          # Clone Vendor Tree
-          git clone https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
-          # Clone Kernel Tree
-          git clone https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
+          git clone --depth=1 https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
+          git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
+          git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
 
       - name: Build ROM
         run: |
           cd ~/crdroid
           source build/envsetup.sh
-          # Memilih target build perangkatmu
           lunch crdroid_X663-userdebug
-          # Memulai proses kompilasi crDroid
           mka bacon
 
       - name: Upload Output ROM ZIP
