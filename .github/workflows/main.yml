@@ -34,30 +34,25 @@ jobs:
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: Initialize & Sync crDroid (Dengan Auto-Retry)
+        - name: Initialize & Sync crDroid (Core System)
         run: |
           mkdir -p ~/crdroid
           cd ~/crdroid
           git config --global user.name "Rafyal"
           git config --global user.email "rafyal991@gmail.com"
           repo init -u https://github.com/crdroidandroid/android.git -b 12.1 --depth=1
-          
-          # Sistem paksa: Ulangi sync maksimal 3 kali jika gagal di tengah jalan
-          n=0
-          until [ "$n" -ge 3 ]
-          do
-             repo sync -c -j8 --force-sync --no-clone-bundle --no-tags && break
-             n=$((n+1))
-             echo "Repo sync gagal, mengulang percobaan ke-$n..."
-             sleep 5
-          done
+          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
 
-      - name: Clone Device, Vendor & Kernel Trees
+      - name: Clone Device, Vendor, Kernel & crDroid Vendor Trees
         run: |
           cd ~/crdroid
+          # Kloning Tree Perangkatmu
           git clone --depth=1 https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
+          
+          # Paksa unduh vendor konfigurasi crDroid agar file common.mk-nya pasti ada
+          git clone --depth=1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
 
       - name: Build ROM
         run: |
