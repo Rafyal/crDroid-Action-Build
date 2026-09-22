@@ -34,7 +34,7 @@ jobs:
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-        - name: Initialize & Sync crDroid (Dengan Auto-Retry)
+      - name: Initialize & Sync crDroid (Dengan Auto-Retry)
         run: |
           mkdir -p ~/crdroid
           cd ~/crdroid
