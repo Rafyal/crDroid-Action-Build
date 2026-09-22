@@ -52,11 +52,21 @@ jobs:
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
 
       - name: Build ROM
+          - name: Build ROM (Mode Investigasi)
         run: |
           cd ~/crdroid
-          source build/envsetup.sh
-          lunch crdroid_X663-userdebug || true
-          mka bacon
+          
+          echo "=== 1. CEK FOLDER SYSTEM ==="
+          ls -la build/ || echo "FOLDER BUILD TIDAK DITEMUKAN! Repo sync gagal."
+          
+          echo "=== 2. EKSEKUSI ENVSETUP ==="
+          source build/envsetup.sh || echo "GAGAL LOAD ENVSETUP!"
+          
+          echo "=== 3. EKSEKUSI LUNCH ==="
+          lunch crdroid_X663-userdebug || echo "GAGAL LUNCH DEVICE TREE!"
+          
+          echo "=== INVESTIGASI SELESAI ==="
+
 
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
