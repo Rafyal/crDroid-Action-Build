@@ -61,17 +61,19 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # HANYA hapus modul soong milik lineage yang bentrok dengan crdroid, 
-          # biarkan sisa folder lineage tetap ada agar file .mk-nya bisa dibaca.
-          rm -rf vendor/lineage/build/soong
+          # TRIK ULTIMATE: Hapus instruksi kompilasi di folder lineage
+          # Ini akan membuat folder lineage "tak kasat mata" oleh mesin kompilasi, 
+          # tapi file konfigurasinya tetap bisa dibaca oleh perintah lunch.
+          find vendor/lineage -type f -name "Android.bp" -delete
+          find vendor/lineage -type f -name "Android.mk" -delete
           
           source build/envsetup.sh
           
           echo "=== EKSEKUSI LUNCH ==="
-          lunch crdroid_X663-userdebug || true
+          lunch crdroid_X663-userdebug
           
           echo "=== MULAI KOMPILASI ==="
-          mka bacon || true
+          mka bacon
       
           
       - name: Upload Output ROM ZIP
