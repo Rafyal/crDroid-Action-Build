@@ -60,8 +60,10 @@ jobs:
         run: |
           cd ~/crdroid
           source build/envsetup.sh
-          lunch crdroid_X663-userdebug
-          mka bacon
+          
+          echo "=== MEMULAI LUNCH ==="
+          lunch crdroid_X663-userdebug || true
+          echo "=== SELESAI LUNCH ==="
           
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
