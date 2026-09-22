@@ -10,7 +10,7 @@ jobs:
     
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Membajak Ruang Penyimpanan (Free Disk Space)
         uses: jlumbroso/free-disk-space@main
@@ -60,7 +60,7 @@ jobs:
           mka bacon
 
       - name: Upload Output ROM ZIP
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-ROM
           path: ~/crdroid/out/target/product/X663/crDroidAndroid-*.zip
