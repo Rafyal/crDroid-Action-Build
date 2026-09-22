@@ -61,15 +61,13 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. Hapus total folder soong milik lineage agar tidak bentrok
-          rm -rf vendor/lineage/build/soong
+          # 1. SOLUSI ROOT CAUSE: Hapus konfigurasi crDroid yang cacat
+          # Sistem akan otomatis beralih menggunakan milik LineageOS yang 100% sehat
+          rm -f vendor/crdroid/build/soong/Android.bp
           
-          # 2. Ganti nama modul yang bentrok di luar folder soong
+          # 2. Atasi bentrok nama modul sisanya di luar folder soong
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
-          
-          # 3. TAMBALAN SAKTI: Buat modul dummy agar komponen health Lineage tidak error
-          echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
           source build/envsetup.sh
           
