@@ -46,31 +46,23 @@ jobs:
       - name: Clone Device, Vendor, Kernel & crDroid Vendor Trees
         run: |
           cd ~/crdroid
+          # Hapus versi sebelumnya yang salah cabang
+          rm -rf vendor/crdroid
+          
           # Kloning Tree Perangkatmu
           git clone --depth=1 https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
           
-          # Paksa unduh vendor konfigurasi crDroid agar file common.mk-nya pasti ada
-          git clone --depth=1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
-
+          # Kloning vendor crDroid khusus basis Android 12.1
+          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
       - name: Build ROM
         run: |
           cd ~/crdroid
-          
-          # Paksa buat symlink atau cek letak folder vendor crDroid yang sebenarnya
-          if [ ! -d "vendor/crdroid" ]; then
-            git clone --depth=1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
-          fi
-          
-          # Tampilkan isi direktori vendor untuk memastikan jalurnya benar
-          ls -la vendor/
-          ls -la vendor/crdroid/ || true
-
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
           mka bacon
-
+          
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
         with:
