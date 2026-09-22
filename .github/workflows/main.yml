@@ -61,7 +61,9 @@ jobs:
           set +e
           cd ~/crdroid
           
-          rm -rf vendor/lineage
+          # HANYA hapus modul soong milik lineage yang bentrok dengan crdroid, 
+          # biarkan sisa folder lineage tetap ada agar file .mk-nya bisa dibaca.
+          rm -rf vendor/lineage/build/soong
           
           source build/envsetup.sh
           
