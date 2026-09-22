@@ -34,7 +34,7 @@ jobs:
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-        - name: Initialize & Sync crDroid (Core System)
+      - name: Initialize & Sync crDroid (Core System)
         run: |
           mkdir -p ~/crdroid
           cd ~/crdroid
