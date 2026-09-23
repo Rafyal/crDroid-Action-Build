@@ -60,16 +60,22 @@ jobs:
       - name: Build ROM
         run: |
           set +e
+          
+          echo "=== MEMBUAT SWAP 16GB (ANTI OOM KILLER) ==="
+          sudo fallocate -l 16G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1G count=16
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+          
           cd ~/crdroid
           
-          # 1. Hapus total folder soong milik lineage
+          # Bersihkan konflik Lineage
           rm -rf vendor/lineage/build/soong
-          
-          # 2. Ganti nama modul yang bentrok
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 3. Hardcode Variabel
+          # Hardcode Variabel
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -79,22 +85,20 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 4. Tambalan Baterai
+          # Tambalan Baterai
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          source build/envsetup.sh
+          # Batasi memori internal compiler
+          export GOMEMLIMIT=10GiB
+          export _JAVA_OPTIONS="-Xmx8g"
           
-          # === TRIK ANTI THRASHING / PROTEKSI RAM ===
-          export GOGC=50
-          export _JAVA_OPTIONS="-Xmx4g"
-          export ANDROID_JACK_VM_ARGS="-Dfile.encoding=UTF-8 -XX:+TieredCompilation -Xmx4G"
-          export SOONG_GEN_RUST_PROJECT=false
+          source build/envsetup.sh
           
           echo "=== EKSEKUSI LUNCH ==="
           lunch crdroid_X663-userdebug
           
           echo "=== MULAI KOMPILASI ==="
-          mka bacon -j4
+          mka bacon -j2
 
       
           
