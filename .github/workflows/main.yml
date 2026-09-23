@@ -61,18 +61,24 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. Hapus total folder soong milik lineage agar tidak bentrok dengan crDroid
+          # 1. Hapus total folder soong milik lineage
           rm -rf vendor/lineage/build/soong
           
-          # 2. Ganti nama modul yang bentrok di luar folder soong
+          # 2. Ganti nama modul yang bentrok
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 3. FIX VARIABEL: Hapus paksa pemanggilan PATH_OVERRIDE_SOONG yang cacat
+          # 3. FIX VARIABEL KERNEL: Ganti semua variabel dinamis menjadi nilai statis absolut
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 4. TAMBALAN SAKTI: Masukkan dummy baterai ke file crDroid
+          # 4. TAMBALAN SAKTI BATERAI
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
           source build/envsetup.sh
