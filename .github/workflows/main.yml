@@ -80,7 +80,8 @@ jobs:
           
           # 1. Bersihkan konflik Lineage
           rm -rf vendor/lineage/build/soong
-          rm -rf vendor/lineage/charger  # <--- TAMBAHAN BARU (Basmi duplikat animasi charger)
+          rm -rf vendor/lineage/charger
+          rm -f vendor/lineage/prebuilt/common/Android.mk # <--- TAMBAHAN BARU (Basmi duplikat animasi charger)
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
