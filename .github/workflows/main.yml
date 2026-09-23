@@ -78,12 +78,13 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # Bersihkan konflik Lineage
+          # 1. Bersihkan konflik Lineage
           rm -rf vendor/lineage/build/soong
+          rm -rf vendor/lineage/charger  # <--- TAMBAHAN BARU (Basmi duplikat animasi charger)
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # Hardcode Variabel
+          # 2. Hardcode Variabel
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -93,17 +94,15 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # Tambalan Baterai
+          # 3. Tambalan Baterai
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          # ==========================================
-          # FIX BARU: Kloning WebView yang gagal tersinkronisasi
-          # ==========================================
+          # 4. FIX MISSING WEBVIEW
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
-          # Batasan Memori Compiler (OOM Killer Protection)
+          # 5. Batasan Memori Compiler (OOM Killer Protection)
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
