@@ -22,7 +22,7 @@ jobs:
           haskell: true
           large-packages: true
           docker-images: true
-          swap-storage: true
+          swap-storage: false
 
       - name: Set up Environment
         run: |
@@ -62,14 +62,11 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. Hapus total folder soong milik lineage
           rm -rf vendor/lineage/build/soong
           
-          # 2. Ganti nama modul yang bentrok
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 3. FIX VARIABEL KERNEL: Ganti semua variabel dinamis menjadi nilai statis absolut
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -79,7 +76,6 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 4. TAMBALAN SAKTI BATERAI
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
           source build/envsetup.sh
@@ -88,7 +84,7 @@ jobs:
           lunch crdroid_X663-userdebug
           
           echo "=== MULAI KOMPILASI ==="
-          mka bacon
+          mka bacon -j4  # <--- JANGAN DI-SKIP LAGI
 
       
           
