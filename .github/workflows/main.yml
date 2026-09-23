@@ -96,7 +96,14 @@ jobs:
           # Tambalan Baterai
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          # Batasan Memori Compiler
+          # ==========================================
+          # FIX BARU: Kloning WebView yang gagal tersinkronisasi
+          # ==========================================
+          echo "=== FIX MISSING WEBVIEW ==="
+          rm -rf external/chromium-webview
+          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
+          
+          # Batasan Memori Compiler (OOM Killer Protection)
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
@@ -107,7 +114,6 @@ jobs:
           
           echo "=== MULAI KOMPILASI ==="
           mka bacon -j2
-
       
           
       - name: Upload Output ROM ZIP
