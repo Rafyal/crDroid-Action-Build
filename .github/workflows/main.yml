@@ -57,24 +57,33 @@ jobs:
           
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
+      - name: Membajak Ruang Penyimpanan (Free Disk Space)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false  # Sangat krusial agar swap bawaan tidak dihapus
+
+      - name: Memompa RAM Virtual (Swap 24GB)
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 24
+
       - name: Build ROM
         run: |
           set +e
-          
-          echo "=== MEMBUAT SWAP 8GB ==="
-          sudo fallocate -l 8G /swapfile || sudo dd if=/dev/zero of=/swapfile bs=1G count=8
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
-          
           cd ~/crdroid
           
-          # 1. Bersihkan konflik Lineage
+          # Bersihkan konflik Lineage
           rm -rf vendor/lineage/build/soong
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 2. Hardcode Variabel
+          # Hardcode Variabel
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -84,14 +93,12 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 3. Tambalan Baterai
+          # Tambalan Baterai
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          # 4. RANTAI PENGEKANG RAM (SANGAT KRUSIAL - JANGAN DIHAPUS)
-          export GOMEMLIMIT=4GiB      # Batasi memori Go jauh di bawah 7GB
-          export GOGC=20              # Paksa buang sampah memori 5x lebih sering
-          export MALLOC_ARENA_MAX=2   # Cegah fragmentasi memori C++
-          export _JAVA_OPTIONS="-Xmx4g"
+          # Batasan Memori Compiler
+          export MALLOC_ARENA_MAX=2
+          export _JAVA_OPTIONS="-Xmx6g"
           
           source build/envsetup.sh
           
