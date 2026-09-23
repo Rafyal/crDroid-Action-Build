@@ -68,10 +68,10 @@ jobs:
           docker-images: true
           swap-storage: false  # Sangat krusial agar swap bawaan tidak dihapus
 
-      - name: Memompa RAM Virtual (Swap 24GB)
+      - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 24
+          swap-size-gb: 8
 
       - name: Build ROM
         run: |
