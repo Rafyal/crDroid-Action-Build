@@ -84,29 +84,30 @@ jobs:
           set +e
           cd ~/crdroid
           
-          echo "=== BASMI SEMUA DUPLIKAT SECARA OTOMATIS ==="
-          # 1. Hapus folder yang sudah pasti bentrok total
+          echo "=== BASMI DUPLIKAT (REVERSE STRATEGY V2) ==="
+          # 1. Hapus konfigurasi lawas Lineage yang memang bentrok di Soong dan Kati
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/charger
           rm -f vendor/lineage/prebuilt/common/Android.mk
           
-          # ---> SKRIP PINTAR PENYAPU RANJAU (Mencegah semua error overriding commands) <---
-          for file in vendor/crdroid/build/tasks/*.mk; do
+          # Hapus modul tes Bluetooth agar Kati tidak tersandung
+          sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
+          
+          # ---> SKRIP PINTAR V2 (Hancurkan file tasks crDroid yang usang, pertahankan milik Lineage) <---
+          for file in vendor/lineage/build/tasks/*.mk; do
               filename=$(basename "$file")
-              if [ -f "vendor/lineage/build/tasks/$filename" ]; then
-                  echo "Menemukan dan menghapus duplikat: $filename"
-                  rm -f "vendor/lineage/build/tasks/$filename"
+              if [ -f "vendor/crdroid/build/tasks/$filename" ]; then
+                  echo "Menghapus duplikat cacat milik crDroid: $filename"
+                  rm -f "vendor/crdroid/build/tasks/$filename"
               fi
           done
           
-          # 3. Patch Android.bp Lineage
+          echo "=== MENAMBAL KONFIGURASI SOONG ==="
+          # 2. Patch Android.bp Lineage
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 4. Hapus tes Bluetooth
-          sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
-          
-          # 5. Hardcode Variabel
+          # 3. Hardcode Variabel Soong (Mencegah error parser bp)
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -116,31 +117,30 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 6. Tambalan Baterai
+          # 4. Tambalan Baterai Dummy
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          # 7. FIX MISSING WEBVIEW
           echo "=== FIX MISSING WEBVIEW ==="
+          # 5. Kloning manual komponen WebView
           rm -rf external/chromium-webview
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
-          # [Semua skrip Anti-Zombie dan penyapu duplikat dari tahap sebelumnya biarkan tetap utuh]
-      
-          # 8. Batasan Memori Compiler (OOM Killer Protection)
+          echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
+          # 6. Batasan Memori Compiler
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
-      
+          
           source build/envsetup.sh
-      
+          
           echo "=== EKSEKUSI LUNCH ==="
           lunch crdroid_X663-userdebug
-      
+          
           echo "=== MULAI KOMPILASI INTI ==="
-          # Mencegah error string kosong pada perintah 'mv' di tahap akhir
+          # 7. Mencegah error string kosong pada variabel nama file akhir (mv error)
           export CRDROID_BUILD_TYPE=UNOFFICIAL
           export CRDROID_MAINTAINER="Rafyal"
-      
-          # Kembali gunakan resep resmi crDroid
+          
+          # 8. Gas eksekusi resep perakitan
           mka bacon -j2
 
           
