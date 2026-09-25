@@ -124,17 +124,26 @@ jobs:
           rm -rf external/chromium-webview
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
+          # [Semua skrip Anti-Zombie dan penyapu duplikat dari tahap sebelumnya biarkan tetap utuh]
+      
           # 8. Batasan Memori Compiler (OOM Killer Protection)
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
-          
+      
           source build/envsetup.sh
-          
+      
           echo "=== EKSEKUSI LUNCH ==="
           lunch crdroid_X663-userdebug
+      
+          echo "=== MULAI KOMPILASI INTI ==="
+          # Mencegah error string kosong pada perintah 'mv' di tahap akhir
+          export CRDROID_BUILD_TYPE=UNOFFICIAL
+          export CRDROID_MAINTAINER="Rafyal"
+      
+          # Kembali gunakan resep resmi crDroid
+          mka bacon -j2
+
           
-          echo "=== MULAI KOMPILASI ==="
-          mka otapackage -j2
       
           
       - name: Upload Output ROM ZIP
