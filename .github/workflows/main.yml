@@ -84,49 +84,35 @@ jobs:
           set +e
           cd ~/crdroid
           
-          echo "=== BASMI DUPLIKAT (REVERSE STRATEGY V2) ==="
-          # 1. Hapus konfigurasi lawas Lineage yang memang bentrok di Soong dan Kati
+          echo "=== PEMBERSIHAN KONFLIK TOTAL ==="
+          # Kita hapus seluruh folder task Lineage agar murni menggunakan crDroid
           rm -rf vendor/lineage/build/soong
+          rm -rf vendor/lineage/build/tasks
           rm -rf vendor/lineage/charger
           rm -f vendor/lineage/prebuilt/common/Android.mk
           
-          # Hapus modul tes Bluetooth agar Kati tidak tersandung
+          # Hapus tes Bluetooth
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
           
-          # ---> SKRIP PINTAR V2 (Hancurkan file tasks crDroid yang usang, pertahankan milik Lineage) <---
-          for file in vendor/lineage/build/tasks/*.mk; do
-              filename=$(basename "$file")
-              if [ -f "vendor/crdroid/build/tasks/$filename" ]; then
-                  echo "Menghapus duplikat cacat milik crDroid: $filename"
-                  rm -f "vendor/crdroid/build/tasks/$filename"
-              fi
-          done
-          
-          echo "=== MENAMBAL KONFIGURASI SOONG ==="
-          # 2. Patch Android.bp Lineage
+          # Patch Android.bp Lineage (sisanya)
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # 3. Hardcode Variabel Soong (Mencegah error parser bp)
-          sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
-          
-          # 4. Tambalan Baterai Dummy
-          echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
-          
           echo "=== FIX MISSING WEBVIEW ==="
-          # 5. Kloning manual komponen WebView
           rm -rf external/chromium-webview
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
+          echo "=== MEMAKSA MESIN MEMBANGUN OS (MENCEGAH SKIP 477 STEPS) ==="
+          # 1. Jika device tree kamu diam-diam membatalkan OTA, kita paksa aktifkan lagi!
+          sed -i 's/TARGET_SKIP_OTA_PACKAGE := true/TARGET_SKIP_OTA_PACKAGE := false/g' device/infinix/X663/BoardConfig.mk || true
+          export TARGET_SKIP_OTA_PACKAGE=false
+          
+          # 2. Mengisi nama device yang hilang di variabel crDroid (menghilangkan bug '--' di nama zip)
+          export CRDROID_BUILD=X663
+          export CRDROID_BUILD_TYPE=UNOFFICIAL
+          export CRDROID_MAINTAINER="Rafyal"
+          
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
-          # 6. Batasan Memori Compiler
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
@@ -136,11 +122,7 @@ jobs:
           lunch crdroid_X663-userdebug
           
           echo "=== MULAI KOMPILASI INTI ==="
-          # 7. Mencegah error string kosong pada variabel nama file akhir (mv error)
-          export CRDROID_BUILD_TYPE=UNOFFICIAL
-          export CRDROID_MAINTAINER="Rafyal"
-          
-          # 8. Gas eksekusi resep perakitan
+          # Kali ini Ninja tidak akan berani melompat ke akhir!
           mka bacon -j2
 
           
