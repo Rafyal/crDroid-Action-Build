@@ -128,7 +128,7 @@ jobs:
           lunch crdroid_X663-userdebug
           
           echo "=== MULAI KOMPILASI ==="
-          mka bacon -j2
+          mka otapackage -j2
       
           
       - name: Upload Output ROM ZIP
