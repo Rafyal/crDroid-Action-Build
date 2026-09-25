@@ -42,7 +42,9 @@ jobs:
           git config --global user.name "Rafyal"
           git config --global user.email "rafyal991@gmail.com"
           repo init -u https://github.com/crdroidandroid/android.git -b 12.1 --depth=1
-          repo sync -c -j8 --force-sync --no-clone-bundle --no-tags
+          
+          # Turunkan dari -j8 ke -j4, dan tambahkan optimized-fetch
+          repo sync -c -j4 --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune
 
       - name: Clone Device, Vendor, Kernel & crDroid Vendor Trees
         run: |
