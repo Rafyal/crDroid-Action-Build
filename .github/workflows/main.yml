@@ -78,19 +78,29 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. Bersihkan konflik Lineage secara presisi (PISAU BEDAH)
+          echo "=== BASMI SEMUA DUPLIKAT SECARA OTOMATIS ==="
+          # 1. Hapus folder yang sudah pasti bentrok total
           rm -rf vendor/lineage/build/soong
-          rm -f vendor/lineage/build/tasks/bacon.mk    # <--- KOREKSI: Hanya hapus file bacon.mk!
           rm -rf vendor/lineage/charger
-          rm -f vendor/lineage/build/tasks/generate_lineage_sdk_coverage.mk
           rm -f vendor/lineage/prebuilt/common/Android.mk
+          
+          # ---> SKRIP PINTAR PENYAPU RANJAU (Mencegah semua error overriding commands) <---
+          for file in vendor/crdroid/build/tasks/*.mk; do
+              filename=$(basename "$file")
+              if [ -f "vendor/lineage/build/tasks/$filename" ]; then
+                  echo "Menemukan dan menghapus duplikat: $filename"
+                  rm -f "vendor/lineage/build/tasks/$filename"
+              fi
+          done
+          
+          # 3. Patch Android.bp Lineage
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # Hapus tes Bluetooth
+          # 4. Hapus tes Bluetooth
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
           
-          # 2. Hardcode Variabel
+          # 5. Hardcode Variabel
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -100,15 +110,15 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          # 3. Tambalan Baterai
+          # 6. Tambalan Baterai
           echo 'cc_defaults { name: "health_charging_control_defaults" }' >> vendor/crdroid/build/soong/Android.bp
           
-          # 4. FIX MISSING WEBVIEW
+          # 7. FIX MISSING WEBVIEW
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
-          # 5. Batasan Memori Compiler (OOM Killer Protection)
+          # 8. Batasan Memori Compiler (OOM Killer Protection)
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
