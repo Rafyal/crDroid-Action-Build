@@ -78,9 +78,9 @@ jobs:
           set +e
           cd ~/crdroid
           
-          # 1. Bersihkan konflik Lineage & Modul Tes
+          # 1. Bersihkan konflik Lineage secara presisi (PISAU BEDAH)
           rm -rf vendor/lineage/build/soong
-          rm -rf vendor/lineage/build/tasks     # <--- TAMBAHAN BARU (Hapus resep mka bacon ganda)
+          rm -f vendor/lineage/build/tasks/bacon.mk    # <--- KOREKSI: Hanya hapus file bacon.mk!
           rm -rf vendor/lineage/charger
           rm -f vendor/lineage/prebuilt/common/Android.mk
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
