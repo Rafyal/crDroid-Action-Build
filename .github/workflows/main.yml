@@ -43,12 +43,19 @@ jobs:
           git config --global user.email "rafyal991@gmail.com"
           repo init -u https://github.com/crdroidandroid/android.git -b 12.1 --depth=1
           
-          echo "=== MEMULAI SINKRONISASI (ANTI-ZOMBIE MODE) ==="
-          # Percobaan ke-1: Beri batas waktu maksimal 45 menit. Jika nyangkut (RTO), bunuh paksa.
-          timeout 45m repo sync -c -j4 --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune || echo "Koneksi nyangkut/RTO! Memulai ulang sinkronisasi sisa file..."
-          
-          # Percobaan ke-2: Lanjutkan sisa unduhan yang terputus dengan batas waktu 30 menit.
-          timeout 30m repo sync -c -j4 --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune || true
+          echo "=== MEMULAI SINKRONISASI (BULLETPROOF MODE) ==="
+          # Looping otomatis maksimal 5 kali (setiap putaran diberi waktu maksimal 40 menit)
+          # Jika sukses 100%, sistem akan "break" (keluar dari loop) dan lanjut ke kompilasi.
+          for i in {1..5}; do
+            echo "Percobaan sinkronisasi ke-$i..."
+            if timeout 40m repo sync -c -j4 --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune; then
+              echo "Sinkronisasi berhasil 100%!"
+              break
+            else
+              echo "Koneksi RTO atau batas waktu habis. Mengulang sisa unduhan dalam 5 detik..."
+              sleep 5
+            fi
+          done
 
       - name: Clone Device, Vendor, Kernel & crDroid Vendor Trees
         run: |
