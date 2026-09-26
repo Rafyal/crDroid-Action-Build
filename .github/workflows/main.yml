@@ -86,7 +86,7 @@ jobs:
         with:
           swap-size-gb: 8
 
-      - name: Build ROM
+      -       - name: Build ROM
         run: |
           set +e
           cd ~/crdroid
@@ -119,29 +119,27 @@ jobs:
           rm -rf external/chromium-webview
           git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_external_chromium-webview.git external/chromium-webview
           
-          echo "=== BRUTE FORCE OVERRIDE VARIABEL ==="
-          # 1. Cari BoardConfig.mk dan paksa aturan OTA di baris paling bawah!
-          BOARD_CONFIG=$(find device/infinix/X663 -name "BoardConfig.mk" | head -n 1)
-          if [ -n "$BOARD_CONFIG" ]; then
-            echo "TARGET_SKIP_OTA_PACKAGE := false" >> "$BOARD_CONFIG"
-          fi
-          
-          # 2. Cari file crdroid.mk dan paksa identitas X663 di baris paling bawah!
-          DEVICE_MK=$(find device/infinix/X663 -name "crdroid*.mk" | head -n 1)
-          if [ -n "$DEVICE_MK" ]; then
-            echo "CRDROID_BUILD := X663" >> "$DEVICE_MK"
-          fi
+          echo "=== THE MAGIC FIX: UNSET SKIP_OTA ==="
+          # Hapus semua aturan TARGET_SKIP_OTA_PACKAGE dari seluruh file konfigurasi!
+          # JANGAN set ke false. Biarkan sistem mengosongkannya.
+          find device/infinix/X663 -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          unset TARGET_SKIP_OTA_PACKAGE
           
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
+          # Tambahkan identitas OS agar nama zip tidak mengandung tanda hubung ganda '--'
+          export CRDROID_BUILD_TYPE=UNOFFICIAL
+          export CRDROID_MAINTAINER="Rafyal"
+          
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
           
-          echo "=== MULAI KOMPILASI INTI DENGAN INJEKSI ==="
-          # 3. Suntikkan variabel langsung ke komandan mesin kompilasi!
-          mka bacon CRDROID_BUILD=X663 TARGET_SKIP_OTA_PACKAGE=false -j2
+          echo "=== MULAI KOMPILASI INTI ==="
+          # Hapus semua suntikan variabel dari baris mka bacon
+          mka bacon -j2
+
           
       
           
