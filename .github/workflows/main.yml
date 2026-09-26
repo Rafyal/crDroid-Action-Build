@@ -91,8 +91,7 @@ jobs:
           set +e
           cd ~/crdroid
           
-          echo "=== PEMBERSIHAN KONFLIK TOTAL V3 (MURNI CRDROID) ==="
-          # Hancurkan SELURUH folder Lineage agar mesin murni menggunakan crDroid
+          echo "=== PEMBERSIHAN KONFLIK (MURNI CRDROID) ==="
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/build/tasks
           rm -rf vendor/lineage/charger
@@ -120,25 +119,29 @@ jobs:
           rm -rf external/chromium-webview
           git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_external_chromium-webview.git external/chromium-webview
           
-          echo "=== MEMAKSA MESIN MEMBANGUN OS (MENGHANCURKAN SKIP OTA) ==="
-          # 1. Cari dan hapus perintah SKIP_OTA di seluruh file .mk dalam folder Infinix X663
-          find device/infinix/X663 -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          echo "=== BRUTE FORCE OVERRIDE VARIABEL ==="
+          # 1. Cari BoardConfig.mk dan paksa aturan OTA di baris paling bawah!
+          BOARD_CONFIG=$(find device/infinix/X663 -name "BoardConfig.mk" | head -n 1)
+          if [ -n "$BOARD_CONFIG" ]; then
+            echo "TARGET_SKIP_OTA_PACKAGE := false" >> "$BOARD_CONFIG"
+          fi
           
-          # 2. Suntikkan nama device secara HARDCODE ke dalam Makefile agar nama ZIP tidak `--`
-          find device/infinix/X663 -name "crdroid*.mk" -type f -exec sh -c 'echo "CRDROID_BUILD := X663" >> "$1"' _ {} \;
+          # 2. Cari file crdroid.mk dan paksa identitas X663 di baris paling bawah!
+          DEVICE_MK=$(find device/infinix/X663 -name "crdroid*.mk" | head -n 1)
+          if [ -n "$DEVICE_MK" ]; then
+            echo "CRDROID_BUILD := X663" >> "$DEVICE_MK"
+          fi
           
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
           source build/envsetup.sh
-          
-          echo "=== EKSEKUSI LUNCH ==="
           lunch crdroid_X663-userdebug
           
-          echo "=== MULAI KOMPILASI INTI ==="
-          mka bacon -j2
-
+          echo "=== MULAI KOMPILASI INTI DENGAN INJEKSI ==="
+          # 3. Suntikkan variabel langsung ke komandan mesin kompilasi!
+          mka bacon CRDROID_BUILD=X663 TARGET_SKIP_OTA_PACKAGE=false -j2
           
       
           
