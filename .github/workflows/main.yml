@@ -86,7 +86,7 @@ jobs:
         with:
           swap-size-gb: 8
 
-      - name: Build ROM
+            - name: Build ROM
         run: |
           set +e
           cd ~/crdroid
@@ -116,11 +116,12 @@ jobs:
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
           
           rm -rf external/chromium-webview
-          git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_external_chromium-webview.git external/chromium-webview
+          # KOREKSI: Gunakan kembali repo crDroid branch 12.1
+          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
           echo "=== PEMUSNAHAN TOTAL SKIP_OTA DARI AKAR ==="
-          # Cari dan bantai aturan SKIP_OTA di KEDUA folder (device dan vendor)
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          unset TARGET_SKIP_OTA_PACKAGE
           
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
@@ -131,10 +132,11 @@ jobs:
           
           source build/envsetup.sh
           
-          echo "=== MULAI KOMPILASI (BRUNCH MODE) ==="
-          # Tinggalkan 'lunch' dan 'mka bacon'. 
-          # Brunch akan mengurus seluruh inject variabel secara otomatis.
-          brunch X663
+          echo "=== MULAI KOMPILASI INTI ==="
+          # KOREKSI: Kembali gunakan kombinasi yang benar untuk crDroid
+          lunch crdroid_X663-userdebug
+          mka bacon -j2
+
 
           
       
