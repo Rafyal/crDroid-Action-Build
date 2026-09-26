@@ -91,29 +91,18 @@ jobs:
           set +e
           cd ~/crdroid
           
-          echo "=== PEMBERSIHAN KONFLIK TOTAL & REVERSE STRATEGY ==="
-          # Hapus Soong dan charger Lineage
+          echo "=== PEMBERSIHAN KONFLIK TOTAL V3 (MURNI CRDROID) ==="
+          # Hancurkan SELURUH folder Lineage agar mesin murni menggunakan crDroid
           rm -rf vendor/lineage/build/soong
+          rm -rf vendor/lineage/build/tasks
           rm -rf vendor/lineage/charger
           rm -f vendor/lineage/prebuilt/common/Android.mk
           
-          # Hapus tes Bluetooth
+          echo "=== PATCH KECIL & HARDCODE SOONG ==="
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
-          
-          # Hancurkan task crDroid yang cacat, pertahankan milik Lineage
-          for file in vendor/lineage/build/tasks/*.mk; do
-              filename=$(basename "$file")
-              if [ -f "vendor/crdroid/build/tasks/$filename" ]; then
-                  rm -f "vendor/crdroid/build/tasks/$filename"
-              fi
-          done
-          
-          echo "=== PATCH SOONG & HARDCODE VARIABEL ==="
-          # Patch overlay Lineage
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
           
-          # Kembalikan variabel Hardcode Soong yang sempat hilang!
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -124,20 +113,19 @@ jobs:
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
           echo "=== FIX ERROR HEALTH AIDL ==="
-          # Hapus paksa dependensi baterai yang bikin Soong crash
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
           
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
-          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
+          git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_external_chromium-webview.git external/chromium-webview
           
-          echo "=== MEMAKSA MESIN MEMBANGUN OS & IDENTITAS ==="
-          sed -i 's/TARGET_SKIP_OTA_PACKAGE := true/TARGET_SKIP_OTA_PACKAGE := false/g' device/infinix/X663/BoardConfig.mk || true
-          export TARGET_SKIP_OTA_PACKAGE=false
-          export CRDROID_BUILD=X663
-          export CRDROID_BUILD_TYPE=UNOFFICIAL
-          export CRDROID_MAINTAINER="Rafyal"
+          echo "=== MEMAKSA MESIN MEMBANGUN OS (MENGHANCURKAN SKIP OTA) ==="
+          # 1. Cari dan hapus perintah SKIP_OTA di seluruh file .mk dalam folder Infinix X663
+          find device/infinix/X663 -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          
+          # 2. Suntikkan nama device secara HARDCODE ke dalam Makefile agar nama ZIP tidak `--`
+          find device/infinix/X663 -name "crdroid*.mk" -type f -exec sh -c 'echo "CRDROID_BUILD := X663" >> "$1"' _ {} \;
           
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
