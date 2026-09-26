@@ -91,7 +91,7 @@ jobs:
           set +e
           cd ~/crdroid
           
-          echo "=== PEMBERSIHAN KONFLIK (MURNI CRDROID) ==="
+          echo "=== PEMBERSIHAN KONFLIK MURNI ==="
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/build/tasks
           rm -rf vendor/lineage/charger
@@ -111,34 +111,30 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           
-          echo "=== FIX ERROR HEALTH AIDL ==="
+          echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
           
-          echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
           git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_external_chromium-webview.git external/chromium-webview
           
-          echo "=== THE MAGIC FIX: UNSET SKIP_OTA ==="
-          # Hapus semua aturan TARGET_SKIP_OTA_PACKAGE dari seluruh file konfigurasi!
-          # JANGAN set ke false. Biarkan sistem mengosongkannya.
-          find device/infinix/X663 -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
-          unset TARGET_SKIP_OTA_PACKAGE
+          echo "=== PEMUSNAHAN TOTAL SKIP_OTA DARI AKAR ==="
+          # Cari dan bantai aturan SKIP_OTA di KEDUA folder (device dan vendor)
+          find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
           
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
-          # Tambahkan identitas OS agar nama zip tidak mengandung tanda hubung ganda '--'
           export CRDROID_BUILD_TYPE=UNOFFICIAL
           export CRDROID_MAINTAINER="Rafyal"
           
           source build/envsetup.sh
-          lunch crdroid_X663-userdebug
           
-          echo "=== MULAI KOMPILASI INTI ==="
-          # Hapus semua suntikan variabel dari baris mka bacon
-          mka bacon -j2
+          echo "=== MULAI KOMPILASI (BRUNCH MODE) ==="
+          # Tinggalkan 'lunch' dan 'mka bacon'. 
+          # Brunch akan mengurus seluruh inject variabel secara otomatis.
+          brunch X663
 
           
       
