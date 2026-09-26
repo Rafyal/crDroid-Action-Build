@@ -86,7 +86,7 @@ jobs:
         with:
           swap-size-gb: 8
 
-      -       - name: Build ROM
+      - name: Build ROM
         run: |
           set +e
           cd ~/crdroid
