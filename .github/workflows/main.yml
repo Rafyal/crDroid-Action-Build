@@ -67,9 +67,12 @@ jobs:
           git clone --depth=1 https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
-          # Kloning Common Tree MT6768 sebagai fondasi utama hardware
-          git clone --depth=1 -b lineage-24.0 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
 
+          # ---> TAMBAHAN BARU: Modul Hardware MediaTek <---
+          git clone --depth=1 -b lineage-24.0 https://github.com/mt6768-dev/android_hardware_mediatek.git hardware/mediatek
+
+          # Kloning Common Tree MT6768 sebagai fondasi utama hardware
+          git clone --depth=1 -b lineage-24.0 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common 
          
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
