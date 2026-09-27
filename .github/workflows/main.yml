@@ -72,7 +72,7 @@ jobs:
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
 
           # Kloning Common Vendor MT6768
-          git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
+          git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
           
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
