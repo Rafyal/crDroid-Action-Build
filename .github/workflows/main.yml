@@ -72,9 +72,11 @@ jobs:
           rm -rf device/xiaomi/mt6768-common
           rm -rf vendor/xiaomi/mt6768-common
 
-          # Kloning Common Tree MT6768 (Device & Vendor) khusus Android 12.1
+          # Kloning Common Tree MT6768 (Device) khusus Android 12.1
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
-          git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
+          
+          # Kloning Common Vendor MT6768 (Default branch) menggunakan URL yang BENAR
+          git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
 
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
@@ -96,20 +98,23 @@ jobs:
 
       - name: Build ROM
         run: |
-          set +e
+          set -e
           cd ~/crdroid
           
-          echo "=== ERASE CONFLICT FILES ==="
+          echo "=== PEMBERSIHAN KONFLIK MURNI ==="
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/build/tasks
           rm -rf vendor/lineage/charger
           rm -f vendor/lineage/prebuilt/common/Android.mk
-          
-          echo "=== SMALL PATCH & HARDCODE SOONG ==="
+
+          echo "=== PATCH KECIL & HARDCODE SOONG ==="
+          # Membedah file Android.bp dari vendor Xiaomi untuk memusnahkan sintaks install_symlink masa depan
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -0777 -pi -e 's/install_symlink\s*\{[^}]*\}//gs' {} +
+
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
-          
+
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -118,32 +123,28 @@ jobs:
           sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
-          
+
           echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
-          
+
           echo "=== SKIPPING OTA PACKAGE COMPILER ==="
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
           unset TARGET_SKIP_OTA_PACKAGE
-          
+
           echo "=== REWRITE BACON.MK (BYPASS MV ERROR) ==="
-          # Merombak file tugas packaging crDroid agar menggunakan perintah copy (cp) yang di-hardcode
-          # Ini akan mengeliminasi error "mv: Needs 2 arguments" secara permanen
           sed -i 's/mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CRDROID_TARGET_PACKAGE)/cp -f $(INTERNAL_OTA_PACKAGE_TARGET) out\/target\/product\/X663\/crdroid_X663_12.1_FINAL.zip/g' vendor/crdroid/build/tasks/bacon.mk || true
-          
+
           echo "=== PREPARING COMPILE (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
 
           source build/envsetup.sh
-          # Jika lunch gagal, skrip akan langsung mati detik itu juga
           lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
 
           echo "=== START COMPILING ==="
           mka systemimage bootimage vendorimage -j2
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j2
-          
       
           
       - name: Upload Output ROM ZIP
