@@ -68,8 +68,8 @@ jobs:
           git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
           git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
 
-          # Mengambil modul hardware MediaTek dari sumber utama LineageOS
-          git clone --depth=1 https://github.com/LineageOS/android_hardware_mediatek.git hardware/mediatek
+          # Kloning Common Tree MT6768 versi Android 12.1
+          git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
 
           # Kloning Common Tree MT6768 sebagai fondasi utama hardware
           git clone --depth=1 -b lineage-24.0 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common 
@@ -136,18 +136,14 @@ jobs:
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
-          
+
           source build/envsetup.sh
-          lunch crdroid_X663-userdebug
-          
-          echo "=== MULAI KOMPILASI INTI (FORCE TARGET MODE) ==="
-          # Memaksa Ninja merakit pondasi sistem operasi terlebih dahulu sebelum menyentuh bacon
+          # Jika lunch gagal, skrip akan langsung mati detik itu juga
+          lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
+
+          echo "=== MULAI KOMPILASI INTI ==="
           mka systemimage bootimage vendorimage -j2
-          
-          # Mengeksekusi bacon dengan menyuntikkan semua variabel penambal secara langsung
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j2
-
-
           
       
           
