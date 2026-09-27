@@ -72,11 +72,9 @@ jobs:
           rm -rf device/xiaomi/mt6768-common
           rm -rf vendor/xiaomi/mt6768-common
 
-          # Kloning Common Tree MT6768 (Device)
+          # Kloning Common Tree MT6768 (Device & Vendor) khusus Android 12.1
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
-
-          # ---> PATCH: Hapus kewajiban common tree untuk mencari vendor Xiaomi <---
-          sed -i '/mt6768-common-vendor.mk/d' device/xiaomi/mt6768-common/mt6768.mk
+          git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
 
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
