@@ -70,10 +70,7 @@ jobs:
 
           # Kloning Common Tree MT6768 versi Android 12.1
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
-
-          # Kloning Common Tree MT6768 sebagai fondasi utama hardware
-          git clone --depth=1 -b lineage-24.0 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common 
-         
+          
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
       - name: Membajak Ruang Penyimpanan (Free Disk Space)
