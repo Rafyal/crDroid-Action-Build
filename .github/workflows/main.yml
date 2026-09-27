@@ -116,26 +116,30 @@ jobs:
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
           
           rm -rf external/chromium-webview
-          # KOREKSI: Gunakan kembali repo crDroid branch 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_external_chromium-webview.git external/chromium-webview
           
           echo "=== PEMUSNAHAN TOTAL SKIP_OTA DARI AKAR ==="
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
           unset TARGET_SKIP_OTA_PACKAGE
           
+          echo "=== REWRITE BACON.MK (BYPASS MV ERROR) ==="
+          # Merombak file tugas packaging crDroid agar menggunakan perintah copy (cp) yang di-hardcode
+          # Ini akan mengeliminasi error "mv: Needs 2 arguments" secara permanen
+          sed -i 's/mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CRDROID_TARGET_PACKAGE)/cp -f $(INTERNAL_OTA_PACKAGE_TARGET) out\/target\/product\/X663\/crdroid_X663_12.1_FINAL.zip/g' vendor/crdroid/build/tasks/bacon.mk || true
+          
           echo "=== PERSIAPAN KOMPILASI (ANTI-OOM) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           
-          export CRDROID_BUILD_TYPE=UNOFFICIAL
-          export CRDROID_MAINTAINER="Rafyal"
-          
           source build/envsetup.sh
-          
-          echo "=== MULAI KOMPILASI INTI ==="
-          # KOREKSI: Kembali gunakan kombinasi yang benar untuk crDroid
           lunch crdroid_X663-userdebug
-          mka bacon -j2
+          
+          echo "=== MULAI KOMPILASI INTI (FORCE TARGET MODE) ==="
+          # Memaksa Ninja merakit pondasi sistem operasi terlebih dahulu sebelum menyentuh bacon
+          mka systemimage bootimage vendorimage -j2
+          
+          # Mengeksekusi bacon dengan menyuntikkan semua variabel penambal secara langsung
+          mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j2
 
 
           
