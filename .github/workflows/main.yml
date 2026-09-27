@@ -98,7 +98,7 @@ jobs:
 
       - name: Build ROM
         run: |
-          set -e
+          set +e
           cd ~/crdroid
           
           echo "=== PEMBERSIHAN KONFLIK MURNI ==="
