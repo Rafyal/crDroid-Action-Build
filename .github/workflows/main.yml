@@ -82,6 +82,10 @@ jobs:
           rm -rf hardware/mediatek
           git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_hardware_mediatek.git hardware/mediatek
 
+          # ---> TAMBAHKAN BLOK INI: Kloning Hardware MediaTek dari crDroid <---
+          rm -rf hardware/mediatek
+          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_hardware_mediatek.git hardware/mediatek
+
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
       - name: Membajak Ruang Penyimpanan (Free Disk Space)
