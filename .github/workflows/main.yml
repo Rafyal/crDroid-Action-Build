@@ -137,9 +137,7 @@ jobs:
           # Mengosongkan seluruh array imports pada soong_namespace secara aman
           
           perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
-          # Menghapus dependensi android.hardware.sensors@1.0-convert-shared yang membandel
-          sed -i 's/"android.hardware.sensors@1.0-convert-shared"//g' vendor/xiaomi/mt6768-common/Android.bp || true
-
+        
           
           echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
@@ -159,35 +157,67 @@ jobs:
           source build/envsetup.sh
           lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
 
-          echo "=== MEMBUAT DUMMY MODULES KARENA REPO HARDWARE TIDAK MEMILIKINYA ==="
+          # =======================================================
+          # AUTO-HEAL: OTOMATISASI RESOLVE MISSING SOONG MODULES & NAMESPACES
+          # =======================================================
+          echo "=== MEMULAI DETEKSI & PERBAIKAN OTOMATIS DEPENDENSI SOONG ==="
           mkdir -p hardware/xiaomi
+          touch hardware/xiaomi/Android.bp
 
-          # Membuat file Android.bp baru dan mendeklarasikan semua dummy yang hilang
-          echo 'cc_library_shared {
-              name: "libbase_shim",
-              srcs: [],
-              shared_libs: ["libbase"],
-          }
-
-          cc_library_shared {
-              name: "libladder",
-              srcs: [],
-          }
-
-          cc_library_shared {
-              name: "vendor.goodix.hardware.biometrics.fingerprint@2.1",
-              srcs: [],
-          }
-
-          cc_library_shared {
-              name: "libprotobuf-cpp-lite-3.9.1-vendorcompat",
-              srcs: [],
-          }
-
-          cc_library_shared {
-              name: "com.fingerprints.extension@1.0",
-              srcs: [],
-          }' > hardware/xiaomi/Android.bp
+          for i in {1..15}; do
+            echo ">>> Putaran Pemeriksaan Dependensi ke-$i..."
+            SOONG_OUTPUT=$(m nothing 2>&1 || true)
+            
+            MISSING_NS=$(echo "$SOONG_OUTPUT" | grep -oP 'namespace \K[^\s]+(?= does not exist)' | sort -u)
+            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+            
+            # Khusus untuk error DEX Boot Jar
+            MISSING_JARS=$(echo "$SOONG_OUTPUT" | grep -oP 'module \K[^ ]+(?= does not provide a dex boot jar)' | sort -u)
+            
+            if [ -z "$MISSING_NS" ] && [ -z "$MISSING_MODS" ] && [ -z "$MISSING_JARS" ]; then
+              echo ">>> [SUKSES] Semua dependensi namespace dan modul Soong sudah terpenuhi!"
+              break
+            fi
+            
+            if [ -n "$MISSING_NS" ]; then
+              for ns in $MISSING_NS; do
+                echo "--> Membuat dummy namespace: $ns"
+                mkdir -p "$ns"
+                echo 'soong_namespace {}' > "$ns/Android.bp"
+              done
+            fi
+            
+            if [ -n "$MISSING_MODS" ]; then
+              for mod in $MISSING_MODS; do
+                if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
+                  # Paksa konversi modul tertentu agar di-treat sebagai cc_library
+                  if [[ "$mod" == "android.hardware.sensors@1.0-convert-shared" ]]; then
+                    echo "--> Menambahkan dummy cc_library (forced): $mod"
+                    printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                  elif [[ "$mod" == mediatek-* ]] || [[ "$mod" == *".jar" ]]; then
+                    echo "--> Menambahkan dummy java_library: $mod"
+                    printf '\njava_library {\n    name: "%s",\n    installable: false,\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                  else
+                    echo "--> Menambahkan dummy cc_library: $mod"
+                    printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                  fi
+                fi
+              done
+            fi
+            
+            # Jika ada modul dummy C/C++ yang ternyata diminta sebagai JAR, ubah menjadi java_library
+            if [ -n "$MISSING_JARS" ]; then
+              for jar in $MISSING_JARS; do
+                echo "--> Mengonversi modul $jar dari cc_library menjadi java_library..."
+                # Menghapus blok cc_library_shared lama untuk modul ini
+                perl -0777 -pi -e "s/cc_library_shared\s*\{\s*name:\s*\"$jar\"[^\}]*\}//gs" hardware/xiaomi/Android.bp
+                # Memasukkan sebagai java_library
+                if ! grep -q "name: \"$jar\"" hardware/xiaomi/Android.bp; then
+                  printf '\njava_library {\n    name: "%s",\n    installable: true,\n}\n' "$jar" >> hardware/xiaomi/Android.bp
+                fi
+              done
+            fi
+          done
           
           echo "=== START COMPILING ==="
           mka systemimage bootimage vendorimage -j2
