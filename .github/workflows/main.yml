@@ -78,9 +78,12 @@ jobs:
           # Kloning Common Vendor MT6768 (Default branch) menggunakan URL yang BENAR
           git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
 
-          # ---> TAMBAHKAN BLOK INI: Kloning Hardware MediaTek dari crDroid <---
-          rm -rf hardware/mediatek
-          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_hardware_mediatek.git hardware/mediatek
+          # Membuat direktori jika belum ada
+          mkdir -p hardware/mediatek
+
+          # Membuat file Android.bp berisi deklarasi namespace kosong
+          echo 'soong_namespace {
+          }' > hardware/mediatek/Android.bp
 
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
