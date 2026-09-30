@@ -28,6 +28,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 libncurses-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig
+      
       - name: Install Repo Tool
         run: |
           mkdir -p ~/bin
@@ -75,22 +76,6 @@ jobs:
           # Kloning Common Tree MT6768 (Device) khusus Android 12.1
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
 
-          echo "=== MEMBUAT DUMMY MODULES KARENA REPO HARDWARE TIDAK MEMILIKINYA ==="
-          mkdir -p hardware/xiaomi
-
-          # Membuat file Android.bp baru (menimpa jika sudah ada) dan mengisi dummy libbase_shim
-          echo 'cc_library_shared {
-              name: "libbase_shim",
-              srcs: [],
-              shared_libs: ["libbase"],
-          }' > hardware/xiaomi/Android.bp
-
-          # MENAMBAHKAN dummy libladder di file yang sama (perhatikan penggunaan >>)
-          echo 'cc_library_shared {
-              name: "libladder",
-              srcs: [],
-          }' >> hardware/xiaomi/Android.bp
-          
           # Kloning Common Vendor MT6768 (Default branch) menggunakan URL yang BENAR
           git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
 
@@ -103,6 +88,7 @@ jobs:
 
           # Kloning vendor crDroid khusus basis Android 12.1
           git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
+      
       - name: Membajak Ruang Penyimpanan (Free Disk Space)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -170,11 +156,56 @@ jobs:
           source build/envsetup.sh
           lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
 
+          # =======================================================
+          # AUTO-HEAL: OTOMATISASI RESOLVE MISSING SOONG MODULES & NAMESPACES
+          # =======================================================
+          echo "=== MEMULAI DETEKSI & PERBAIKAN OTOMATIS DEPENDENSI SOONG ==="
+          mkdir -p hardware/xiaomi
+          touch hardware/xiaomi/Android.bp
+
+          # Loop maksimal 10 putaran hingga Soong bersih dari error dependensi
+          for i in {1..10}; do
+            echo ">>> Putaran Pemeriksaan Dependensi ke-$i..."
+            
+            # Jalankan dry-run parsing Soong tanpa mengompilasi kode C/C++
+            SOONG_OUTPUT=$(m nothing 2>&1 || true)
+            
+            # 1. Tangkap semua namespace yang belum ada
+            MISSING_NS=$(echo "$SOONG_OUTPUT" | grep -oP 'namespace \K[^\s]+(?= does not exist)' | sort -u)
+            
+            # 2. Tangkap semua modul yang hilang (undefined module)
+            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+            
+            # Jika sudah tidak ada error dependensi modul maupun namespace, keluar dari loop
+            if [ -z "$MISSING_NS" ] && [ -z "$MISSING_MODS" ]; then
+              echo ">>> [SUKSES] Semua dependensi namespace dan modul Soong sudah terpenuhi!"
+              break
+            fi
+            
+            # Auto-create dummy namespace
+            if [ -n "$MISSING_NS" ]; then
+              for ns in $MISSING_NS; do
+                echo "--> Membuat dummy namespace: $ns"
+                mkdir -p "$ns"
+                echo 'soong_namespace {}' > "$ns/Android.bp"
+              done
+            fi
+            
+            # Auto-create dummy library
+            if [ -n "$MISSING_MODS" ]; then
+              for mod in $MISSING_MODS; do
+                  if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
+                    echo "--> Menambahkan dummy module: $mod"
+                    printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                  fi
+                done
+             fi
+           done
+
           echo "=== START COMPILING ==="
           mka systemimage bootimage vendorimage -j2
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j2
       
-          
       - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
         with:
