@@ -137,7 +137,9 @@ jobs:
           # Mengosongkan seluruh array imports pada soong_namespace secara aman
           
           perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
-        
+
+          echo "=== BYPASS DEX BOOT JAR ERROR ==="
+          find build/ vendor/ hardware/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g' {} +
           
           echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
