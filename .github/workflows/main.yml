@@ -137,6 +137,9 @@ jobs:
           # Mengosongkan seluruh array imports pada soong_namespace secara aman
           
           perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
+          # Menghapus dependensi android.hardware.sensors@1.0-convert-shared yang membandel
+          sed -i 's/"android.hardware.sensors@1.0-convert-shared"//g' vendor/xiaomi/mt6768-common/Android.bp || true
+
           
           echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
