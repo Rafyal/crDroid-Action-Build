@@ -75,13 +75,21 @@ jobs:
           # Kloning Common Tree MT6768 (Device) khusus Android 12.1
           git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
 
-          echo "=== MEMBUAT DUMMY LIBBASE_SHIM KARENA REPO HARDWARE/XIAOMI TIDAK MEMILIKINYA ==="
+          echo "=== MEMBUAT DUMMY MODULES KARENA REPO HARDWARE TIDAK MEMILIKINYA ==="
           mkdir -p hardware/xiaomi
+
+          # Membuat file Android.bp baru (menimpa jika sudah ada) dan mengisi dummy libbase_shim
           echo 'cc_library_shared {
               name: "libbase_shim",
               srcs: [],
               shared_libs: ["libbase"],
           }' > hardware/xiaomi/Android.bp
+
+          # MENAMBAHKAN dummy libladder di file yang sama (perhatikan penggunaan >>)
+          echo 'cc_library_shared {
+              name: "libladder",
+              srcs: [],
+          }' >> hardware/xiaomi/Android.bp
           
           # Kloning Common Vendor MT6768 (Default branch) menggunakan URL yang BENAR
           git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
