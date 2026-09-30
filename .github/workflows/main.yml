@@ -156,52 +156,36 @@ jobs:
           source build/envsetup.sh
           lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
 
-          # =======================================================
-          # AUTO-HEAL: OTOMATISASI RESOLVE MISSING SOONG MODULES & NAMESPACES
-          # =======================================================
-          echo "=== MEMULAI DETEKSI & PERBAIKAN OTOMATIS DEPENDENSI SOONG ==="
+          echo "=== MEMBUAT DUMMY MODULES KARENA REPO HARDWARE TIDAK MEMILIKINYA ==="
           mkdir -p hardware/xiaomi
-          touch hardware/xiaomi/Android.bp
 
-          # Loop maksimal 10 putaran hingga Soong bersih dari error dependensi
-          for i in {1..10}; do
-            echo ">>> Putaran Pemeriksaan Dependensi ke-$i..."
-            
-            # Jalankan dry-run parsing Soong tanpa mengompilasi kode C/C++
-            SOONG_OUTPUT=$(m nothing 2>&1 || true)
-            
-            # 1. Tangkap semua namespace yang belum ada
-            MISSING_NS=$(echo "$SOONG_OUTPUT" | grep -oP 'namespace \K[^\s]+(?= does not exist)' | sort -u)
-            
-            # 2. Tangkap semua modul yang hilang (undefined module)
-            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
-            
-            # Jika sudah tidak ada error dependensi modul maupun namespace, keluar dari loop
-            if [ -z "$MISSING_NS" ] && [ -z "$MISSING_MODS" ]; then
-              echo ">>> [SUKSES] Semua dependensi namespace dan modul Soong sudah terpenuhi!"
-              break
-            fi
-            
-            # Auto-create dummy namespace
-            if [ -n "$MISSING_NS" ]; then
-              for ns in $MISSING_NS; do
-                echo "--> Membuat dummy namespace: $ns"
-                mkdir -p "$ns"
-                echo 'soong_namespace {}' > "$ns/Android.bp"
-              done
-            fi
-            
-            # Auto-create dummy library
-            if [ -n "$MISSING_MODS" ]; then
-              for mod in $MISSING_MODS; do
-                  if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
-                    echo "--> Menambahkan dummy module: $mod"
-                    printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
-                  fi
-                done
-             fi
-           done
+          # Membuat file Android.bp baru dan mendeklarasikan semua dummy yang hilang
+          echo 'cc_library_shared {
+              name: "libbase_shim",
+              srcs: [],
+              shared_libs: ["libbase"],
+          }
 
+          cc_library_shared {
+              name: "libladder",
+              srcs: [],
+          }
+
+          cc_library_shared {
+              name: "vendor.goodix.hardware.biometrics.fingerprint@2.1",
+              srcs: [],
+          }
+
+          cc_library_shared {
+              name: "libprotobuf-cpp-lite-3.9.1-vendorcompat",
+              srcs: [],
+          }
+
+          cc_library_shared {
+              name: "com.fingerprints.extension@1.0",
+              srcs: [],
+          }' > hardware/xiaomi/Android.bp
+          
           echo "=== START COMPILING ==="
           mka systemimage bootimage vendorimage -j2
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j2
