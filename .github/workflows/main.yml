@@ -131,6 +131,8 @@ jobs:
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
+          sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
+          perl -0777 -pi -e 's/imports\s*:\s*\[[^\]]*\]//gs' vendor/xiaomi/mt6768-common/Android.bp || true
 
           echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
