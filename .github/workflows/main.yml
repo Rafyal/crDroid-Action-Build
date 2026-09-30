@@ -165,6 +165,11 @@ jobs:
           echo "=== MEMULAI DETEKSI & PERBAIKAN OTOMATIS DEPENDENSI SOONG ==="
           mkdir -p hardware/xiaomi
           touch hardware/xiaomi/Android.bp
+          
+          # Buat satu file JAR kosong untuk semua dummy
+          mkdir -p hardware/xiaomi/dummy_jars
+          touch hardware/xiaomi/dummy_jars/dummy.jar
+          zip -j hardware/xiaomi/dummy_jars/dummy.jar hardware/xiaomi/dummy_jars/dummy.jar
 
           for i in {1..15}; do
             echo ">>> Putaran Pemeriksaan Dependensi ke-$i..."
@@ -172,11 +177,14 @@ jobs:
             
             MISSING_NS=$(echo "$SOONG_OUTPUT" | grep -oP 'namespace \K[^\s]+(?= does not exist)' | sort -u)
             MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+            MISSING_JARS=$(echo "$SOONG_OUTPUT" | grep -oP 'module "\K[^"]+(?=" variant "[^"]+": module [^ ]+ does not provide a dex jar)' | sort -u | uniq)
+            # Menangkap juga format error dex jar yang lain jika ada
+            MISSING_JARS2=$(echo "$SOONG_OUTPUT" | grep -oP 'module \K[^ {]+(?=\{os:android,arch:common\} does not provide a dex jar)' | sort -u)
             
-            # Khusus untuk error DEX Boot Jar
-            MISSING_JARS=$(echo "$SOONG_OUTPUT" | grep -oP 'module \K[^ ]+(?= does not provide a dex boot jar)' | sort -u)
-            
-            if [ -z "$MISSING_NS" ] && [ -z "$MISSING_MODS" ] && [ -z "$MISSING_JARS" ]; then
+            # Gabungkan MISSING_JARS dan MISSING_JARS2
+            ALL_MISSING_JARS=$(echo -e "$MISSING_JARS\n$MISSING_JARS2" | grep -v '^$' | sort -u)
+
+            if [ -z "$MISSING_NS" ] && [ -z "$MISSING_MODS" ] && [ -z "$ALL_MISSING_JARS" ]; then
               echo ">>> [SUKSES] Semua dependensi namespace dan modul Soong sudah terpenuhi!"
               break
             fi
@@ -192,13 +200,13 @@ jobs:
             if [ -n "$MISSING_MODS" ]; then
               for mod in $MISSING_MODS; do
                 if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
-                  # Paksa konversi modul tertentu agar di-treat sebagai cc_library
                   if [[ "$mod" == "android.hardware.sensors@1.0-convert-shared" ]]; then
                     echo "--> Menambahkan dummy cc_library (forced): $mod"
                     printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
                   elif [[ "$mod" == mediatek-* ]] || [[ "$mod" == *".jar" ]]; then
-                    echo "--> Menambahkan dummy java_library: $mod"
-                    printf '\njava_library {\n    name: "%s",\n    installable: false,\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                    # Buat sebagai java_import agar bisa mensuplai dex jar
+                    echo "--> Menambahkan dummy java_import: $mod"
+                    printf '\njava_import {\n    name: "%s",\n    jars: ["dummy_jars/dummy.jar"],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
                   else
                     echo "--> Menambahkan dummy cc_library: $mod"
                     printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
@@ -207,15 +215,13 @@ jobs:
               done
             fi
             
-            # Jika ada modul dummy C/C++ yang ternyata diminta sebagai JAR, ubah menjadi java_library
-            if [ -n "$MISSING_JARS" ]; then
-              for jar in $MISSING_JARS; do
-                echo "--> Mengonversi modul $jar dari cc_library menjadi java_library..."
-                # Menghapus blok cc_library_shared lama untuk modul ini
+            if [ -n "$ALL_MISSING_JARS" ]; then
+              for jar in $ALL_MISSING_JARS; do
+                echo "--> Mengonversi modul $jar menjadi java_import..."
                 perl -0777 -pi -e "s/cc_library_shared\s*\{\s*name:\s*\"$jar\"[^\}]*\}//gs" hardware/xiaomi/Android.bp
-                # Memasukkan sebagai java_library
+                perl -0777 -pi -e "s/java_library\s*\{\s*name:\s*\"$jar\"[^\}]*\}//gs" hardware/xiaomi/Android.bp
                 if ! grep -q "name: \"$jar\"" hardware/xiaomi/Android.bp; then
-                  printf '\njava_library {\n    name: "%s",\n    installable: true,\n}\n' "$jar" >> hardware/xiaomi/Android.bp
+                  printf '\njava_import {\n    name: "%s",\n    jars: ["dummy_jars/dummy.jar"],\n}\n' "$jar" >> hardware/xiaomi/Android.bp
                 fi
               done
             fi
