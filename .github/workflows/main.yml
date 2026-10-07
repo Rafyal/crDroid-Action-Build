@@ -167,6 +167,33 @@ jobs:
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
 
+          echo "=== MEMBUAT DUMMY UNTUK MISSING SHIMS & C++ LIBS ==="
+          mkdir -p hardware/xiaomi
+          touch hardware/xiaomi/Android.bp
+
+          for i in {1..12}; do
+            echo ">>> Cek dependensi C/C++ putaran ke-$i..."
+            SOONG_OUTPUT=$(m nothing 2>&1 || true)
+  
+            # Menangkap modul C/C++ yang undefined seperti libbase_shim
+            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+
+            if [ -z "$MISSING_MODS" ]; then
+              echo ">>> [SUKSES] Semua dependensi C/C++ terpenuhi!"
+              break
+            fi
+
+            for mod in $MISSING_MODS; do
+            if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
+              # Filter ketat: Pastikan yang di-dummy BUKAN file .jar atau modul mediatek-*
+              if [[ "$mod" != *".jar" ]] && [[ "$mod" != mediatek-* ]]; then
+                echo "--> Injeksi dummy cc_library_shared: $mod"
+                printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+              fi
+            fi
+          done
+          done
+
           echo "=== START COMPILING ==="
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
       
