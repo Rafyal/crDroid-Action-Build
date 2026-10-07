@@ -164,6 +164,32 @@ jobs:
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
 
+          echo "=== BYPASS DEX BOOT JAR ERROR & SHIMS ==="
+          # 1. Menghapus modul MediaTek dari Bootclasspath agar Soong tidak mencari file DEX-nya
+          find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g' {} +
+
+          # 2. Membuat dummy khusus untuk dependensi C/C++ (Shims) yang tidak ada di stock ROM
+          mkdir -p hardware/xiaomi
+          touch hardware/xiaomi/Android.bp
+
+          for i in {1..12}; do
+            SOONG_OUTPUT=$(m nothing 2>&1 || true)
+            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+
+            if [ -z "$MISSING_MODS" ]; then
+              break
+            fi
+
+              for mod in $MISSING_MODS; do
+                if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
+                # Jangan dummy file .jar, hanya file C/C++
+                if [[ "$mod" != *".jar" ]] && [[ "$mod" != mediatek-* ]]; then
+                  printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
+                fi
+              fi
+            done
+          done
+
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
 
