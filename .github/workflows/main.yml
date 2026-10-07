@@ -190,6 +190,11 @@ jobs:
             done
           done
 
+          echo "=== FIX MISSING WEBVIEW ==="
+          # Menghapus folder kosong jika ada, lalu kloning paksa repositori Webview
+          rm -rf external/chromium-webview
+          git clone --depth=1 https://github.com/LineageOS/android_external_chromium-webview.git -b lineage-19.1 external/chromium-webview
+
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
 
