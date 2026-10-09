@@ -107,6 +107,9 @@ jobs:
 
       - name: Build ROM
         run: |
+          set +e
+          cd ~/crdroid
+
           echo "=== PEMBERSIHAN KONFLIK MURNI ==="
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/build/tasks
@@ -173,11 +176,11 @@ jobs:
           export TARGET_SKIP_OTA_PACKAGE=false
 
           echo "=== START COMPILING CORE COMPONENTS ==="
-          # Build target files directly instead of relying on 'bacon'
+          # Build target files langsung tanpa mengandalkan 'bacon'
           mka target-files-package -j$(nproc --all)
 
           echo "=== GENERATING FLASHABLE OTA ZIP ==="
-          # Manually invoke the OTA generation tool
+          # Panggil tool OTA dari Android secara manual
           build/tools/releasetools/ota_from_target_files \
             --block \
             out/target/product/X663/obj/PACKAGING/target_files_intermediates/crdroid_X663-target_files-*.zip \
@@ -187,4 +190,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          path: out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
+          path: ~/crdroid/out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
