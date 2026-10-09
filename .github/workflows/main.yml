@@ -179,13 +179,12 @@ jobs:
           export WITH_DEXPREOPT=false
 
           echo "=== START COMPILING ==="
-          # Menggunakan target otapackage bawaan AOSP. 
-          # Variabel TARGET_SKIP dilempar langsung ke mka untuk melakukan override absolut pada Makefile.
-          mka otapackage TARGET_SKIP_OTA_PACKAGE=false -j$(nproc --all)
+          # Menggunakan perintah modern 'dist' sesuai standar AOSP terbaru
+          mka dist -j$(nproc --all)
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          # Menggunakan path absolut dengan wildcard (*.zip) untuk menangkap hasil otapackage AOSP
-          path: /home/runner/crdroid/out/target/product/X663/*.zip
+          # make dist secara otomatis meletakkan file OTA .zip di folder out/dist/
+          path: ~/crdroid/out/dist/*.zip
