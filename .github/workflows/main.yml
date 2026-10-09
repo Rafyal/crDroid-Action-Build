@@ -140,9 +140,21 @@ jobs:
           rm -rf external/chromium-webview
           repo sync external/chromium-webview -c --force-sync --no-clone-bundle --no-tags
 
-          echo "=== FIX ERROR HEALTH AIDL ==="
+          echo "=== FIX ERROR HEALTH AIDL & KERNEL & OTA ==="
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
+          
+          # Hapus paksa flag yang menggagalkan pembuatan file OTA (Penyebab error "mv: Needs 2 arguments")
+          find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          
+          # Tangani perbedaan nama file Kernel
+          if [ -f device/infinix/X663-kernel/kernel ]; then
+              cp device/infinix/X663-kernel/kernel device/infinix/X663-kernel/Image.gz
+          elif [ -f device/infinix/X663-kernel/Image.gz-dtb ]; then
+              cp device/infinix/X663-kernel/Image.gz-dtb device/infinix/X663-kernel/Image.gz
+          elif [ ! -f device/infinix/X663-kernel/Image.gz ]; then
+              touch device/infinix/X663-kernel/Image.gz
+          fi
 
           echo "=== INISIALISASI LINGKUNGAN BUILD ==="
           source build/envsetup.sh
@@ -151,17 +163,10 @@ jobs:
           echo "=== AUTO-PRUNE: PEMOTONG DEPENDENSI XIAOMI OTOMATIS ==="
           if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
             for i in {1..25}; do
-              echo ">>> Putaran scan dependensi ke-$i..."
               SOONG_OUTPUT=$(m nothing 2>&1 || true)
               MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
-              
-              if [ -z "$MISSING_MODS" ]; then
-                echo ">>> [SUKSES] Seluruh blueprint bersih dari error dependensi!"
-                break
-              fi
-              
+              if [ -z "$MISSING_MODS" ]; then break; fi
               for mod in $MISSING_MODS; do
-                echo "--> Menghapus dependensi spesifik: $mod"
                 sed -i "s/\"$mod\",//g" vendor/xiaomi/mt6768-common/Android.bp
                 sed -i "s/\"$mod\"//g" vendor/xiaomi/mt6768-common/Android.bp
               done
@@ -172,22 +177,13 @@ jobs:
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           export WITH_DEXPREOPT=false
-          export CRDROID_BUILD=X663
-          export TARGET_SKIP_OTA_PACKAGE=false
 
-          echo "=== START COMPILING CORE COMPONENTS ==="
-          # Build target files langsung tanpa mengandalkan 'bacon'
-          mka target-files-package -j$(nproc --all)
-
-          echo "=== GENERATING FLASHABLE OTA ZIP ==="
-          # Panggil tool OTA dari Android secara manual
-          build/tools/releasetools/ota_from_target_files \
-            --block \
-            out/target/product/X663/obj/PACKAGING/target_files_intermediates/crdroid_X663-target_files-*.zip \
-            out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
+          echo "=== START COMPILING ==="
+          # Kembali gunakan mka bacon yang aman dari error modul Python, dan tentukan target zip secara eksplisit
+          mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          path: ~/crdroid/out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
+          path: ~/crdroid/out/target/product/X663/crdroid_X663_12.1_FINAL.zip
