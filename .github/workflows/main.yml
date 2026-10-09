@@ -187,8 +187,8 @@ jobs:
           
           echo "=== START COMPILING ==="
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
-                - name: Upload Output ROM ZIP
-        uses: actions/upload-artifact@v4
-        with:
+          - name: Upload Output ROM ZIP
+          uses: actions/upload-artifact@v4
+          with:
           name: crDroid-X663-ROM
           path: ~/crdroid/out/target/product/X663/crDroidAndroid-*.zip
