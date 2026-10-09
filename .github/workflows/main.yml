@@ -173,18 +173,18 @@ jobs:
             done
           fi
 
-          echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
+          echo "=== PREPARING COMPILE (SAFE MODE) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           export WITH_DEXPREOPT=false
 
           echo "=== START COMPILING ==="
-          # Menggunakan perintah modern 'dist' sesuai standar AOSP terbaru
-          mka dist -j$(nproc --all)
+          # Membatasi thread kompilasi ke 4 pekerjaan saja (-j4) 
+          # Ini akan mencegah RAM server penuh dan menghentikan proses di tengah jalan
+          mka dist -j4
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          # make dist secara otomatis meletakkan file OTA .zip di folder out/dist/
           path: ~/crdroid/out/dist/*.zip
