@@ -164,67 +164,23 @@ jobs:
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
 
-          echo "=== BYPASS DEX BOOT JAR ERROR & SHIMS ==="
-          # 1. Menghapus modul MediaTek dari Bootclasspath agar Soong tidak mencari file DEX-nya
-          find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g' {} +
-
-          # 2. Membuat dummy khusus untuk dependensi C/C++ (Shims) yang tidak ada di stock ROM
-          mkdir -p hardware/xiaomi
-          touch hardware/xiaomi/Android.bp
-
-          for i in {1..12}; do
-            SOONG_OUTPUT=$(m nothing 2>&1 || true)
-            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
-
-            if [ -z "$MISSING_MODS" ]; then
-              break
-            fi
-
-              for mod in $MISSING_MODS; do
-                if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
-                # Jangan dummy file .jar, hanya file C/C++
-                if [[ "$mod" != *".jar" ]] && [[ "$mod" != mediatek-* ]]; then
-                  printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
-                fi
-              fi
-            done
-          done
-
+          echo "=== BYPASS DEX BOOT JAR ERROR ==="
+          # Menghapus modul MediaTek dari Bootclasspath agar Soong tidak mencari file DEX-nya
+          find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
+          
           echo "=== FIX MISSING WEBVIEW ==="
-          # Menghapus folder kosong jika ada, lalu kloning paksa repositori Webview
           rm -rf external/chromium-webview
           git clone --depth=1 https://github.com/LineageOS/android_external_chromium-webview.git -b lineage-19.1 external/chromium-webview
-
+          
+          echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
+          export MALLOC_ARENA_MAX=2
+          export _JAVA_OPTIONS="-Xmx6g"
+          # Wajib dimatikan agar tidak bentrok dengan prebuilt MediaTek saat dibungkus ke ZIP
+          export WITH_DEXPREOPT=false
+          
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
-
-          echo "=== MEMBUAT DUMMY UNTUK MISSING SHIMS & C++ LIBS ==="
-          mkdir -p hardware/xiaomi
-          touch hardware/xiaomi/Android.bp
-
-          for i in {1..12}; do
-            echo ">>> Cek dependensi C/C++ putaran ke-$i..."
-            SOONG_OUTPUT=$(m nothing 2>&1 || true)
-  
-            # Menangkap modul C/C++ yang undefined seperti libbase_shim
-            MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
-
-            if [ -z "$MISSING_MODS" ]; then
-              echo ">>> [SUKSES] Semua dependensi C/C++ terpenuhi!"
-              break
-            fi
-
-            for mod in $MISSING_MODS; do
-            if ! grep -q "name: \"$mod\"" hardware/xiaomi/Android.bp; then
-              # Filter ketat: Pastikan yang di-dummy BUKAN file .jar atau modul mediatek-*
-              if [[ "$mod" != *".jar" ]] && [[ "$mod" != mediatek-* ]]; then
-                echo "--> Injeksi dummy cc_library_shared: $mod"
-                printf '\ncc_library_shared {\n    name: "%s",\n    srcs: [],\n}\n' "$mod" >> hardware/xiaomi/Android.bp
-              fi
-            fi
-          done
-          done
-
+          
           echo "=== START COMPILING ==="
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
       
