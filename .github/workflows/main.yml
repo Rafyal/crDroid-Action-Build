@@ -166,29 +166,32 @@ jobs:
 
           echo "=== BYPASS DEX BOOT JAR ERROR ==="
           find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
-          
+
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
-          # Menggunakan repo resmi crDroid untuk Android 12.1
-          git clone --depth=1 https://github.com/crdroidandroid/android_external_chromium-webview.git -b 12.1 external/chromium-webview
-          
-          echo "=== FIX MISSING XIAOMI SHIMS (libladder, dll) ==="
-          rm -rf hardware/xiaomi
-          # Mengunduh komponen hardware C++ asli milik Xiaomi
-          git clone --depth=1 https://github.com/LineageOS/android_hardware_xiaomi.git -b lineage-19.1 hardware/xiaomi
-          
+          # Memaksa repo untuk menyinkronkan ulang Webview sesuai manifest resmi crDroid
+          repo sync external/chromium-webview -c --force-sync --no-clone-bundle --no-tags
+
+          echo "=== FIX MISSING SHIMS (TANPA DUMMY) ==="
+          # Menghapus pemanggilan libbase_shim dan libladder dari Android.bp vendor agar Soong tidak error, tanpa membuat dummy
+          if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
+              sed -i 's/"libbase_shim",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"libladder",//g' vendor/xiaomi/mt6768-common/Android.bp
+          fi
+
           echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           export WITH_DEXPREOPT=false
-          
+
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
-          
+
           echo "=== START COMPILING ==="
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
-          - name: Upload Output ROM ZIP
-          uses: actions/upload-artifact@v4
-          with:
-          name: crDroid-X663-ROM
-          path: ~/crdroid/out/target/product/X663/crDroidAndroid-*.zip
+
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crDroid-X663-Build
+          path: workspace/out/target/product/X663/crdroid_X663_12.1_FINAL.zip
