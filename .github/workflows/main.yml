@@ -165,17 +165,21 @@ jobs:
           export _JAVA_OPTIONS="-Xmx6g"
 
           echo "=== BYPASS DEX BOOT JAR ERROR ==="
-          # Menghapus modul MediaTek dari Bootclasspath agar Soong tidak mencari file DEX-nya
           find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
           
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
-          git clone --depth=1 https://github.com/LineageOS/android_external_chromium-webview.git -b lineage-19.1 external/chromium-webview
+          # Menggunakan repo resmi crDroid untuk Android 12.1
+          git clone --depth=1 https://github.com/crdroidandroid/android_external_chromium-webview.git -b 12.1 external/chromium-webview
+          
+          echo "=== FIX MISSING XIAOMI SHIMS (libladder, dll) ==="
+          rm -rf hardware/xiaomi
+          # Mengunduh komponen hardware C++ asli milik Xiaomi
+          git clone --depth=1 https://github.com/LineageOS/android_hardware_xiaomi.git -b lineage-19.1 hardware/xiaomi
           
           echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
-          # Wajib dimatikan agar tidak bentrok dengan prebuilt MediaTek saat dibungkus ke ZIP
           export WITH_DEXPREOPT=false
           
           source build/envsetup.sh
@@ -183,8 +187,7 @@ jobs:
           
           echo "=== START COMPILING ==="
           mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
-      
-      - name: Upload Output ROM ZIP
+                - name: Upload Output ROM ZIP
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-ROM
