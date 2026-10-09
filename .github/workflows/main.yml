@@ -107,9 +107,6 @@ jobs:
 
       - name: Build ROM
         run: |
-          set +e
-          cd ~/crdroid
-          
           echo "=== PEMBERSIHAN KONFLIK MURNI ==="
           rm -rf vendor/lineage/build/soong
           rm -rf vendor/lineage/build/tasks
@@ -117,13 +114,10 @@ jobs:
           rm -f vendor/lineage/prebuilt/common/Android.mk
 
           echo "=== PATCH KECIL & HARDCODE SOONG ==="
-          # Membedah file Android.bp dari vendor Xiaomi untuk memusnahkan sintaks install_symlink masa depan
           find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -0777 -pi -e 's/install_symlink\s*\{[^}]*\}//gs' {} +
-
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
-
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
@@ -134,38 +128,7 @@ jobs:
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
           sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
-          # Mengosongkan seluruh array imports pada soong_namespace secara aman
-          
           perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
-
-          echo "=== BYPASS DEX BOOT JAR ERROR ==="
-          find build/ vendor/ hardware/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g' {} +
-          
-          echo "=== FIX ERROR HEALTH AIDL & WEBVIEW ==="
-          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
-          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
-
-          echo "=== SKIPPING OTA PACKAGE COMPILER ==="
-          find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
-          unset TARGET_SKIP_OTA_PACKAGE
-
-          
-          echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
-          export MALLOC_ARENA_MAX=2
-          export _JAVA_OPTIONS="-Xmx6g"
-          export WITH_DEXPREOPT=false
-
-
-          echo "=== REWRITE BACON.MK (BYPASS MV ERROR) ==="
-          sed -i 's/mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CRDROID_TARGET_PACKAGE)/cp -f $(INTERNAL_OTA_PACKAGE_TARGET) out\/target\/product\/X663\/crdroid_X663_12.1_FINAL.zip/g' vendor/crdroid/build/tasks/bacon.mk || true
-          
-          source build/envsetup.sh
-          lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
-
-        
-          echo "=== PREPARING COMPILE (ANTI-OOM) ==="
-          export MALLOC_ARENA_MAX=2
-          export _JAVA_OPTIONS="-Xmx6g"
 
           echo "=== BYPASS DEX BOOT JAR ERROR ==="
           find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
@@ -173,6 +136,10 @@ jobs:
           echo "=== FIX MISSING WEBVIEW ==="
           rm -rf external/chromium-webview
           repo sync external/chromium-webview -c --force-sync --no-clone-bundle --no-tags
+
+          echo "=== FIX ERROR HEALTH AIDL ==="
+          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
+          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
 
           echo "=== INISIALISASI LINGKUNGAN BUILD ==="
           source build/envsetup.sh
@@ -182,10 +149,7 @@ jobs:
           if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
             for i in {1..25}; do
               echo ">>> Putaran scan dependensi ke-$i..."
-              # 'm nothing' melakukan simulasi pengecekan tanpa kompilasi penuh
               SOONG_OUTPUT=$(m nothing 2>&1 || true)
-              
-              # Menangkap nama modul yang error (undefined module)
               MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
               
               if [ -z "$MISSING_MODS" ]; then
@@ -195,7 +159,6 @@ jobs:
               
               for mod in $MISSING_MODS; do
                 echo "--> Menghapus dependensi spesifik: $mod"
-                # Memotong nama modul beserta tanda kutip dan koma dari Android.bp
                 sed -i "s/\"$mod\",//g" vendor/xiaomi/mt6768-common/Android.bp
                 sed -i "s/\"$mod\"//g" vendor/xiaomi/mt6768-common/Android.bp
               done
@@ -206,19 +169,22 @@ jobs:
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
           export WITH_DEXPREOPT=false
-
-          # WAJIB: Paksa ekspor variabel ke environment agar terbaca oleh Makefile crDroid
           export CRDROID_BUILD=X663
           export TARGET_SKIP_OTA_PACKAGE=false
-          export TARGET_SKIP_OTAPACKAGE=false
 
-          echo "=== START COMPILING ==="
-          # Gunakan perintah asli tanpa override manual
-          mka bacon -j$(nproc --all)
+          echo "=== START COMPILING CORE COMPONENTS ==="
+          # Build target files directly instead of relying on 'bacon'
+          mka target-files-package -j$(nproc --all)
+
+          echo "=== GENERATING FLASHABLE OTA ZIP ==="
+          # Manually invoke the OTA generation tool
+          build/tools/releasetools/ota_from_target_files \
+            --block \
+            out/target/product/X663/obj/PACKAGING/target_files_intermediates/crdroid_X663-target_files-*.zip \
+            out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          # Gunakan wildcard (*) agar selalu cocok dengan nama ROM yang dihasilkan hari itu
-          path: out/target/product/X663/crDroidAndroid-*.zip
+          path: out/target/product/X663/crDroidAndroid-12.1-X663-FINAL.zip
