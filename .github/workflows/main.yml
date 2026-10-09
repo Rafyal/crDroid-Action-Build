@@ -149,13 +149,32 @@ jobs:
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
           unset TARGET_SKIP_OTA_PACKAGE
 
-          echo "=== REWRITE BACON.MK (BYPASS MV ERROR) ==="
-          sed -i 's/mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CRDROID_TARGET_PACKAGE)/cp -f $(INTERNAL_OTA_PACKAGE_TARGET) out\/target\/product\/X663\/crdroid_X663_12.1_FINAL.zip/g' vendor/crdroid/build/tasks/bacon.mk || true
+          echo "=== FIX MISSING SHIMS & VENDOR INTERFACES (TANPA DUMMY) ==="
+          if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
+              # Hapus dependensi shim C++ sebelumnya
+              sed -i 's/"libbase_shim",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"libladder",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"libbase_shim"//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"libladder"//g' vendor/xiaomi/mt6768-common/Android.bp
+              
+              # Hapus dependensi HIDL Mediatek & Goodix bawaan Xiaomi
+              sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.1",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.2",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"vendor.goodix.hardware.biometrics.fingerprint@2.1",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.1"//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.2"//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"vendor.goodix.hardware.biometrics.fingerprint@2.1"//g' vendor/xiaomi/mt6768-common/Android.bp
+          fi
 
-          echo "=== PREPARING COMPILE (ANTI-OOM) ==="
+          echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx6g"
+          export WITH_DEXPREOPT=false
 
+
+          echo "=== REWRITE BACON.MK (BYPASS MV ERROR) ==="
+          sed -i 's/mv -f $(INTERNAL_OTA_PACKAGE_TARGET) $(CRDROID_TARGET_PACKAGE)/cp -f $(INTERNAL_OTA_PACKAGE_TARGET) out\/target\/product\/X663\/crdroid_X663_12.1_FINAL.zip/g' vendor/crdroid/build/tasks/bacon.mk || true
+          
           source build/envsetup.sh
           lunch crdroid_X663-userdebug || { echo "LUNCH GAGAL! Periksa kembali device tree."; exit 1; }
 
