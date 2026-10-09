@@ -178,12 +178,17 @@ jobs:
           export _JAVA_OPTIONS="-Xmx6g"
           export WITH_DEXPREOPT=false
 
+          echo "=== FORCE OVERRIDE VARIABLES ==="
+          # Menghapus paksa semua baris skip OTA yang mungkin tersembunyi di seluruh file konfigurasi
+          find device/ vendor/ build/ -type f -name "*.mk" -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+
           echo "=== START COMPILING ==="
-          # Kembali gunakan mka bacon yang aman dari error modul Python, dan tentukan target zip secara eksplisit
-          mka bacon CRDROID_BUILD=X663 CRDROID_TARGET_PACKAGE=out/target/product/X663/crdroid_X663_12.1_FINAL.zip -j$(nproc --all)
+          # Melempar variabel LANGSUNG ke mka agar tidak ada lagi file sumber yang kosong!
+          mka bacon TARGET_SKIP_OTA_PACKAGE=false CRDROID_BUILD=X663 -j$(nproc --all)
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-Build
-          path: ~/crdroid/out/target/product/X663/crdroid_X663_12.1_FINAL.zip
+          # Menggunakan wildcard (*) agar format nama X663 yang baru selalu terbaca
+          path: out/target/product/X663/crDroidAndroid-12.1-*.zip
