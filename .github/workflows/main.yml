@@ -164,6 +164,9 @@ jobs:
               sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.1"//g' vendor/xiaomi/mt6768-common/Android.bp
               sed -i 's/"vendor.mediatek.hardware.bluetooth.audio@2.2"//g' vendor/xiaomi/mt6768-common/Android.bp
               sed -i 's/"vendor.goodix.hardware.biometrics.fingerprint@2.1"//g' vendor/xiaomi/mt6768-common/Android.bp
+              # Hapus dependensi Widevine DRM dan FPC Fingerprint yang baru terdeteksi
+              sed -i 's/"libprotobuf-cpp-lite-3.9.1-vendorcompat",//g; s/"com.fingerprints.extension@1.0",//g' vendor/xiaomi/mt6768-common/Android.bp
+              sed -i 's/"libprotobuf-cpp-lite-3.9.1-vendorcompat"//g; s/"com.fingerprints.extension@1.0"//g' vendor/xiaomi/mt6768-common/Android.bp
           fi
 
           echo "=== PREPARING COMPILE (ANTI-OOM & DEX BYPASS) ==="
