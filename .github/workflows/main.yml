@@ -104,7 +104,7 @@ jobs:
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 8
+          swap-size-gb: 24
 
       - name: Build ROM
         run: |
@@ -185,7 +185,7 @@ jobs:
           echo "=== START COMPILING ==="
           # Membatasi thread kompilasi ke 4 pekerjaan saja (-j4) 
           # Ini akan mencegah RAM server penuh dan menghentikan proses di tengah jalan
-          mka dist -j4
+          mka dist -j2
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
