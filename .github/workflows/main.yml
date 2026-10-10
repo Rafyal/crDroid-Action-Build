@@ -124,16 +124,19 @@ jobs:
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
 
-          # KEMBALIKAN 2 BARIS INI UNTUK MENCEGAH ERROR SOONG BOOTSTRAP:
+          # Ganti dengan path bawaan Android agar lolos dari blokir Sandbox!
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
-          # BIARKAN 2 BARIS INI DI-COMMENT AGAR LOLOS DARI ERROR "MAKE" SANDBOX DI 53%:
-          # sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
-          # sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
-           
+          
+          # PERBAIKAN KRUSIAL DI BARIS INI:
+          sed -i 's/$(KERNEL_MAKE_CMD)/prebuilts\/build-tools\/linux-x86\/bin\/make/g' vendor/crdroid/build/soong/Android.bp || true
+          
+          sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
+          
+          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
+         
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
           sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
