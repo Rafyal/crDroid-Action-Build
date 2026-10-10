@@ -123,6 +123,13 @@ jobs:
           sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
+
+          # KEMBALIKAN 2 BARIS INI UNTUK MENCEGAH ERROR SOONG BOOTSTRAP:
+          sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
+          # BIARKAN 2 BARIS INI DI-COMMENT AGAR LOLOS DARI ERROR "MAKE" SANDBOX DI 53%:
+          # sed -i 's/$(KERNEL_MAKE_CMD)/make/g' vendor/crdroid/build/soong/Android.bp || true
+          # sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
            
           sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
