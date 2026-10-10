@@ -145,6 +145,9 @@ jobs:
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
           sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
           
+          echo "=== FIX BOOTLOADER MESSAGE OFFSET ==="
+          sed -i 's/BOARD_RECOVERY_BLDRMSG_OFFSET/0/g' bootable/recovery/bootloader_message/include/bootloader_message/bootloader_message.h
+          
           # Hapus paksa flag yang menggagalkan pembuatan file OTA (Penyebab error "mv: Needs 2 arguments")
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
           
