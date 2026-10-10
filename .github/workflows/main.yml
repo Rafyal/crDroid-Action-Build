@@ -178,14 +178,16 @@ jobs:
             done
           fi
 
-          echo "=== PREPARING COMPILE (SAFE MODE) ==="
+          echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export MALLOC_ARENA_MAX=2
-          export _JAVA_OPTIONS="-Xmx6g"
+          export _JAVA_OPTIONS="-Xmx4g"
           export WITH_DEXPREOPT=false
+          
+          # KUNCI UTAMA: Membatasi proses linking/kompilasi berat HANYA 1 dalam satu waktu
+          export NINJA_HIGHMEM_NUM_JOBS=1
+          export NINJA_ARGS="-j2"
 
           echo "=== START COMPILING ==="
-          # Membatasi thread kompilasi ke 4 pekerjaan saja (-j4) 
-          # Ini akan mencegah RAM server penuh dan menghentikan proses di tengah jalan
           mka dist -j2
 
       - name: Upload ROM Artifact
