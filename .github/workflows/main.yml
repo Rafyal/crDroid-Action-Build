@@ -100,7 +100,7 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: false
-       run: |
+          run: |
            echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB+) ==="
            rm -rf .repo/
           
