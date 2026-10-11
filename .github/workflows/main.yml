@@ -100,22 +100,11 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: false
-          run: |
-           echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB+) ==="
-           rm -rf .repo/
           
-            # Hapus compiler Mac & Windows yang memakan gigabyte ruang
-            rm -rf prebuilts/clang/host/darwin-x86
-            rm -rf prebuilts/clang/host/windows-x86
-            rm -rf prebuilts/gcc/darwin-x86
-            rm -rf prebuilts/gcc/windows-x86
-
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 5
-    
-        
+          swap-size-gb: 8
 
       - name: Build ROM 
         run: |
@@ -213,20 +202,24 @@ jobs:
           # Hapus seluruh riwayat git yang tersembunyi di dalam source code
           find . -name ".git" -type d -exec rm -rf {} + || true
 
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB) ==="
+          rm -rf .repo/
+          rm -rf prebuilts/clang/host/darwin-x86
+          rm -rf prebuilts/clang/host/windows-x86
+          rm -rf prebuilts/gcc/darwin-x86
+          rm -rf prebuilts/gcc/windows-x86
+          
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx4g"
           export WITH_DEXPREOPT=false
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
-
+  
           echo "=== START COMPILING ==="
-          # Skrip Keep-Alive agar GitHub tidak mengira server mati
           while true; do echo "Kompilasi masih berjalan... Jangan dibunuh! $(date)"; sleep 600; done &
-          
-          # Eksekusi kompilasi dengan batas memori yang ketat
           m dist -j2
-
+          
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
