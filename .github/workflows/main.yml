@@ -188,7 +188,6 @@ jobs:
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
 
-
           echo "=== AUTO-PRUNE: PEMOTONG DEPENDENSI XIAOMI OTOMATIS ==="
           if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
             for i in {1..25}; do
@@ -213,6 +212,20 @@ jobs:
           
           # Hapus seluruh riwayat git yang tersembunyi di dalam source code
           find . -name ".git" -type d -exec rm -rf {} + || true
+
+          echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
+          export MALLOC_ARENA_MAX=2
+          export _JAVA_OPTIONS="-Xmx4g"
+          export WITH_DEXPREOPT=false
+          export NINJA_HIGHMEM_NUM_JOBS=1
+          export NINJA_ARGS="-j2"
+
+          echo "=== START COMPILING ==="
+          # Skrip Keep-Alive agar GitHub tidak mengira server mati
+          while true; do echo "Kompilasi masih berjalan... Jangan dibunuh! $(date)"; sleep 600; done &
+          
+          # Eksekusi kompilasi dengan batas memori yang ketat
+          m dist -j2
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
