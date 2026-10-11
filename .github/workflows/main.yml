@@ -99,15 +99,25 @@ jobs:
           haskell: true
           large-packages: true
           docker-images: true
-          swap-storage: false  # Sangat krusial agar swap bawaan tidak dihapus
+          swap-storage: false
+       run: |
+           echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB+) ==="
+           rm -rf .repo/
+          
+            # Hapus compiler Mac & Windows yang memakan gigabyte ruang
+            rm -rf prebuilts/clang/host/darwin-x86
+            rm -rf prebuilts/clang/host/windows-x86
+            rm -rf prebuilts/gcc/darwin-x86
+            rm -rf prebuilts/gcc/windows-x86
 
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 10
+          swap-size-gb: 6
+    
         
 
-      - name: Build ROM
+      - name: Build ROM 
         run: |
           set +e
           cd ~/crdroid
