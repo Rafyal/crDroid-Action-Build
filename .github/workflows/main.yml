@@ -171,9 +171,13 @@ jobs:
               touch device/infinix/X663-kernel/Image.gz
           fi
 
+          echo "=== BYPASS KERNEL HEADERS INSTALL ==="
+          echo "headers_install:" > device/infinix/X663-kernel/Makefile
+          
           echo "=== INISIALISASI LINGKUNGAN BUILD ==="
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
+
 
           echo "=== AUTO-PRUNE: PEMOTONG DEPENDENSI XIAOMI OTOMATIS ==="
           if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
