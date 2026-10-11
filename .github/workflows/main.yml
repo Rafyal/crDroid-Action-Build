@@ -113,7 +113,7 @@ jobs:
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 6
+          swap-size-gb: 5
     
         
 
@@ -202,17 +202,17 @@ jobs:
             done
           fi
 
-          echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
-          export MALLOC_ARENA_MAX=2
-          export _JAVA_OPTIONS="-Xmx4g"
-          export WITH_DEXPREOPT=false
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (MAXIMUM) ==="
+          rm -rf .repo/
           
-          # KUNCI UTAMA: Membatasi proses linking/kompilasi berat HANYA 1 dalam satu waktu
-          export NINJA_HIGHMEM_NUM_JOBS=1
-          export NINJA_ARGS="-j2"
-
-          echo "=== START COMPILING ==="
-          mka dist -j2
+          # Hapus compiler Mac & Windows
+          rm -rf prebuilts/clang/host/darwin-x86
+          rm -rf prebuilts/clang/host/windows-x86
+          rm -rf prebuilts/gcc/darwin-x86
+          rm -rf prebuilts/gcc/windows-x86
+          
+          # Hapus seluruh riwayat git yang tersembunyi di dalam source code
+          find . -name ".git" -type d -exec rm -rf {} + || true
 
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
