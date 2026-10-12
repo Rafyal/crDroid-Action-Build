@@ -193,9 +193,9 @@ jobs:
           fi
 
             - name: Build ROM
-        run: |
-          set +e
-          cd ~/crdroid
+          run: |
+            set +e
+            cd ~/crdroid
         
           # (Biarkan skrip sed/patch milikmu yang ada di bagian atas tetap di sini)
           
