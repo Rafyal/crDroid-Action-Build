@@ -104,7 +104,7 @@ jobs:
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 8
+          swap-size-gb: 4
 
       - name: Build ROM 
         run: |
@@ -202,14 +202,12 @@ jobs:
           # Hapus seluruh riwayat git yang tersembunyi di dalam source code
           find . -name ".git" -type d -exec rm -rf {} + || true
 
-          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB) ==="
-          rm -rf .repo/
-          rm -rf prebuilts/clang/host/darwin-x86
-          rm -rf prebuilts/clang/host/windows-x86
-          rm -rf prebuilts/gcc/darwin-x86
-          rm -rf prebuilts/gcc/windows-x86
+          # Ekstra penghematan: Hapus emulator bawaan yang tidak dipakai
+          rm -rf prebuilts/android-emulator* || true
+          rm -rf prebuilts/qemu-kernel* || true
           
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
+          export USE_CCACHE=0
           export MALLOC_ARENA_MAX=2
           export _JAVA_OPTIONS="-Xmx4g"
           export WITH_DEXPREOPT=false
@@ -219,7 +217,7 @@ jobs:
           echo "=== START COMPILING ==="
           while true; do echo "Kompilasi masih berjalan... Jangan dibunuh! $(date)"; sleep 600; done &
           m dist -j2
-          
+        
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
