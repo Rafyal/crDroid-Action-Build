@@ -230,8 +230,8 @@ jobs:
           done &
           
           echo "=== START COMPILING RAW IMAGES ==="
-        # Merakit partisi inti secara individual untuk menghindari error target
-        m bootimage systemimage vendorimage -j2
+          # Merakit partisi inti secara individual untuk menghindari error target
+          m bootimage systemimage vendorimage -j2
           
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
