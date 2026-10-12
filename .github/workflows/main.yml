@@ -192,21 +192,24 @@ jobs:
             done
           fi
 
-          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (MAXIMUM) ==="
+          echo "=== Clearing Some Space ==="
           rm -rf .repo/
-          
-          # Hapus compiler Mac & Windows
           rm -rf prebuilts/clang/host/darwin-x86
           rm -rf prebuilts/clang/host/windows-x86
           rm -rf prebuilts/gcc/darwin-x86
           rm -rf prebuilts/gcc/windows-x86
-          
-          # Hapus seluruh riwayat git yang tersembunyi di dalam source code
-          find . -name ".git" -type d -exec rm -rf {} + || true
-
-          # Ekstra penghematan: Hapus emulator bawaan yang tidak dipakai
           rm -rf prebuilts/android-emulator* || true
           rm -rf prebuilts/qemu-kernel* || true
+          
+          # Erase Clang 8 
+          find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
+          
+          # Unused VNDK (Obviously)
+          rm -rf prebuilts/vndk/v2*
+          
+          # Delete Unused apps
+          rm -rf packages/apps/TV
+          rm -rf packages/apps/Car
           
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export USE_CCACHE=0
@@ -216,21 +219,16 @@ jobs:
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
   
-          echo "=== START COMPILING SUPER & BOOT IMAGES ==="
-          # Skrip Monitor Resource via Log GitHub (Mencetak info tiap 3 menit)
-          while true; do 
-            echo "=========================================="
-            echo "WAKTU: $(date)"
-            echo "--- STATUS RAM & SWAP ---"
-            free -h
-            echo "--- STATUS DISK (SSD) ---"
-            df -h /
-            echo "=========================================="
-            sleep 180
-          done &
-          
+          echo "=== SSH Monitoring ==="
+          sudo apt-get install -y tmate
+          tmate -S /tmp/tmate.sock new-session -d
+          tmate -S /tmp/tmate.sock wait tmate-ready
+          echo "=================================================================="
+          echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
+          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+          echo "=================================================================="
+  
           echo "=== START COMPILING RAW IMAGES ==="
-          # Merakit partisi inti secara individual untuk menghindari error target
           m bootimage systemimage vendorimage -j2
           
       - name: Upload ROM Artifact
