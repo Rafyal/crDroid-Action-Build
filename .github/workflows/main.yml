@@ -219,14 +219,14 @@ jobs:
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
   
-                  echo "=== MEMULAI TMATE SSH LIVE MONITORING ==="
-        sudo apt-get install -y tmate
-        tmate -S /tmp/tmate.sock new-session -d
-        sleep 5
-        echo "=================================================================="
-        echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
-        tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-        echo "=================================================================="
+          echo "=== MEMULAI TMATE SSH LIVE MONITORING ==="
+          sudo apt-get install -y tmate
+          tmate -S /tmp/tmate.sock new-session -d
+          sleep 5
+          echo "=================================================================="
+          echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
+          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
+          echo "=================================================================="
 
           echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
           tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
