@@ -192,7 +192,7 @@ jobs:
             done
           fi
 
-          echo "=== Clearing Some Space ==="
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
           rm -rf .repo/
           rm -rf prebuilts/clang/host/darwin-x86
           rm -rf prebuilts/clang/host/windows-x86
@@ -200,17 +200,14 @@ jobs:
           rm -rf prebuilts/gcc/windows-x86
           rm -rf prebuilts/android-emulator* || true
           rm -rf prebuilts/qemu-kernel* || true
-          
-          # Erase Clang 8 
+        
+          # Hapus versi compiler Clang lama (Sisakan r416183b1 untuk crDroid 8)
           find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
-          
-          # Unused VNDK (Obviously)
-          rm -rf prebuilts/vndk/v2*
-          
-          # Delete Unused apps
+        
+          # Hapus aplikasi bawaan AOSP yang tidak dipakai
           rm -rf packages/apps/TV
           rm -rf packages/apps/Car
-          
+        
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export USE_CCACHE=0
           export MALLOC_ARENA_MAX=2
@@ -218,20 +215,21 @@ jobs:
           export WITH_DEXPREOPT=false
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
-  
+
           echo "=== MEMULAI TMATE SSH LIVE MONITORING ==="
           sudo apt-get install -y tmate
           tmate -S /tmp/tmate.sock new-session -d
-          sleep 5
+        
+          echo "Menghubungkan ke server Tmate..."
+          while [ -z "$(tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}' | grep ssh)" ]; do
+            sleep 2
+          done
+        
           echo "=================================================================="
           echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
           tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
           echo "=================================================================="
 
-          echo "Akses server secara LIVE dari Termux HP menggunakan perintah SSH:"
-          tmate -S /tmp/tmate.sock display -p '#{tmate_ssh}'
-          echo "=================================================================="
-  
           echo "=== START COMPILING RAW IMAGES ==="
           m bootimage systemimage vendorimage -j2
           
