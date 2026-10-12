@@ -106,11 +106,7 @@ jobs:
         with:
           swap-size-gb: 5
 
-        # Tambahkan blok Tmate ini sebelum Build ROM
-      - name: Setup Tmate Session (Background SSH)
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
+        
 
       - name: Build ROM 
         run: |
@@ -221,7 +217,18 @@ jobs:
           export NINJA_ARGS="-j2"
   
           echo "=== START COMPILING SUPER & BOOT IMAGES ==="
-          # Eksekusi langsung tanpa script loop
+          # Skrip Monitor Resource via Log GitHub (Mencetak info tiap 3 menit)
+          while true; do 
+            echo "=========================================="
+            echo "WAKTU: $(date)"
+            echo "--- STATUS RAM & SWAP ---"
+            free -h
+            echo "--- STATUS DISK (SSD) ---"
+            df -h /
+            echo "=========================================="
+            sleep 180
+          done &
+          
           m superimage bootimage -j2
           
       - name: Upload ROM Artifact
