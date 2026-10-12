@@ -104,7 +104,13 @@ jobs:
       - name: Memompa RAM Virtual (Swap 8GB)
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 4
+          swap-size-gb: 5
+
+        # Tambahkan blok Tmate ini sebelum Build ROM
+      - name: Setup Tmate Session (Background SSH)
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
 
       - name: Build ROM 
         run: |
@@ -214,10 +220,10 @@ jobs:
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
   
-          echo "=== START COMPILING ==="
-          while true; do echo "Kompilasi masih berjalan... Jangan dibunuh! $(date)"; sleep 600; done &
-          m dist -j2
-        
+          echo "=== START COMPILING SUPER & BOOT IMAGES ==="
+          # Eksekusi langsung tanpa script loop
+          m superimage bootimage -j2
+          
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
