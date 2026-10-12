@@ -192,55 +192,55 @@ jobs:
             done
           fi
 
-          - name: Build ROM
-      run: |
-        set +e
-        cd ~/crdroid
+            - name: Build ROM
+        run: |
+          set +e
+          cd ~/crdroid
         
-        # (Biarkan skrip sed/patch milikmu yang ada di bagian atas tetap di sini)
-        
-        echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
-        rm -rf .repo/
-        rm -rf prebuilts/clang/host/darwin-x86
-        rm -rf prebuilts/clang/host/windows-x86
-        rm -rf prebuilts/gcc/darwin-x86
-        rm -rf prebuilts/gcc/windows-x86
-        rm -rf prebuilts/android-emulator* || true
-        rm -rf prebuilts/qemu-kernel* || true
-        
-        # Hapus versi compiler Clang lama (Sisakan r416183b1 untuk crDroid 8)
-        find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
-        
-        # Hapus aplikasi bawaan AOSP yang tidak dipakai
-        rm -rf packages/apps/TV
-        rm -rf packages/apps/Car
-        
-        echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
-        export USE_CCACHE=0
-        export MALLOC_ARENA_MAX=2
-        export _JAVA_OPTIONS="-Xmx4g"
-        export WITH_DEXPREOPT=false
-        export NINJA_HIGHMEM_NUM_JOBS=1
-        export NINJA_ARGS="-j2"
-
-        echo "=== START BACKGROUND RESOURCE MONITOR ==="
-        # Berjalan di latar belakang, mencetak log setiap 5 menit (300 detik)
-        while true; do
-          echo "=========================================="
-          echo "WAKTU: $(date)"
-          echo "--- STATUS RAM & SWAP ---"
-          free -h
-          echo "--- STATUS DISK (SSD) ---"
-          df -h /
-          echo "=========================================="
-          sleep 300
-        done &
-
-        echo "=== START COMPILING RAW IMAGES ==="
-        m bootimage systemimage vendorimage -j2
+          # (Biarkan skrip sed/patch milikmu yang ada di bagian atas tetap di sini)
           
-        - name: Upload ROM Artifact
-          uses: actions/upload-artifact@v4
-          with:
-            name: crDroid-X663-Build
-            path: ~/crdroid/out/dist/*.zip
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
+          rm -rf .repo/
+          rm -rf prebuilts/clang/host/darwin-x86
+          rm -rf prebuilts/clang/host/windows-x86
+          rm -rf prebuilts/gcc/darwin-x86
+          rm -rf prebuilts/gcc/windows-x86
+          rm -rf prebuilts/android-emulator* || true
+          rm -rf prebuilts/qemu-kernel* || true
+          
+          # Hapus versi compiler Clang lama (Sisakan r416183b1 untuk crDroid 8)
+          find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
+          
+          # Hapus aplikasi bawaan AOSP yang tidak dipakai
+          rm -rf packages/apps/TV
+          rm -rf packages/apps/Car
+          
+          echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
+          export USE_CCACHE=0
+          export MALLOC_ARENA_MAX=2
+          export _JAVA_OPTIONS="-Xmx4g"
+          export WITH_DEXPREOPT=false
+          export NINJA_HIGHMEM_NUM_JOBS=1
+          export NINJA_ARGS="-j2"
+  
+          echo "=== START BACKGROUND RESOURCE MONITOR ==="
+          # Berjalan di latar belakang, mencetak log setiap 5 menit (300 detik)
+          while true; do
+            echo "=========================================="
+            echo "WAKTU: $(date)"
+            echo "--- STATUS RAM & SWAP ---"
+            free -h
+            echo "--- STATUS DISK (SSD) ---"
+            df -h /
+            echo "=========================================="
+            sleep 300
+          done &
+  
+          echo "=== START COMPILING RAW IMAGES ==="
+          m bootimage systemimage vendorimage -j2
+            
+          - name: Upload ROM Artifact
+            uses: actions/upload-artifact@v4
+            with:
+              name: crDroid-X663-Build
+              path: ~/crdroid/out/dist/*.zip
