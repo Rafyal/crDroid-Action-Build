@@ -191,13 +191,6 @@ jobs:
               done
             done
           fi
-
-            - name: Build ROM
-          run: |
-            set +e
-            cd ~/crdroid
-        
-          # (Biarkan skrip sed/patch milikmu yang ada di bagian atas tetap di sini)
           
           echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
           rm -rf .repo/
