@@ -213,9 +213,10 @@ jobs:
           export NINJA_ARGS="-j2"
           
           echo "=== FIX VENDOR PARTITION TARGET ==="
-          # Memaksa sistem mencetak vendor.img dengan format ext4
+          # Mendeklarasikan direktori output dan format file system untuk vendor
+          echo "TARGET_COPY_OUT_VENDOR := vendor" >> device/infinix/X663/BoardConfig.mk
           echo "BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4" >> device/infinix/X663/BoardConfig.mk
-  
+    
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
           while true; do
             echo "=========================================="
