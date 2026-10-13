@@ -201,8 +201,6 @@ jobs:
           rm -rf prebuilts/android-emulator* || true
           rm -rf prebuilts/qemu-kernel* || true
         
-          # Hapus versi compiler Clang lama (Sisakan r416183b1 untuk crDroid 8)
-          find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
           
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export USE_CCACHE=0
