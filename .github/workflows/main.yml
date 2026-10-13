@@ -227,8 +227,8 @@ jobs:
           m bootimage -j2
   
       - name: Upload ROM Artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: crDroid-X663-Boot-Image
-        path: ~/crdroid/out/target/product/X663/boot.img
-        compression-level: 6
+        uses: actions/upload-artifact@v4
+        with:
+         name: crDroid-X663-Boot-Image
+         path: ~/crdroid/out/target/product/X663/boot.img
+         compression-level: 6
