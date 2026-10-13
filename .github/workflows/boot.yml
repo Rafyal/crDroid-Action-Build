@@ -210,30 +210,34 @@ jobs:
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
   
+          echo "=== FIX MISSING BOOT PARTITION SIZE ==="
+          # Menambahkan ukuran partisi boot 64MB secara dinamis
+          echo "BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864" >> device/infinix/X663/BoardConfig.mk
+          
+          echo "=== PENANGANAN KERNEL & DTB UTAMA ==="
+          # Memindahkan file dari folder prebuilt ke root folder kernel agar terbaca oleh BoardConfig
+          cp device/infinix/X663-kernel/prebuilt/Image.gz device/infinix/X663-kernel/Image.gz
+          cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb
+  
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
-          # Berjalan di latar belakang, mencetak log setiap 5 menit
           while true; do
             echo "=========================================="
             echo "WAKTU: $(date)"
-            echo "--- STATUS RAM & SWAP ---"
             free -h
-            echo "--- STATUS DISK (SSD) ---"
             df -h /
             echo "=========================================="
             sleep 300
           done &
   
-          echo "=== FIX MISSING BOOT PARTITION SIZE ==="
-          # Menambahkan ukuran partisi boot 64MB secara dinamis ke BoardConfig
-          echo "BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864" >> device/infinix/X663/BoardConfig.mk
-          
           echo "=== START COMPILING BOOT IMAGE ONLY ==="
           m bootimage -j2
+          
+          echo "=== VERIFIKASI HASIL FILE ==="
+          find out/target/product/X663/ -maxdepth 1 -name "*.img"
   
-      # Menangkap SEMUA file image yang terbentuk (system_a.img, system_ext_a.img, dll)
-      - name: Upload ROM Artifact
+      - name: Upload Boot Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: crDroid-X663-System-Images
+          name: crDroid-X663-Boot-Images
           path: /home/runner/crdroid/out/target/product/X663/*.img
           compression-level: 6
