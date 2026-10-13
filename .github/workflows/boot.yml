@@ -1,4 +1,4 @@
-name: crDroid Build (Free Tier Survival)
+name: crDroid Build (Boot)
 
 on:
   workflow_dispatch:
