@@ -200,13 +200,9 @@ jobs:
           rm -rf prebuilts/gcc/windows-x86
           rm -rf prebuilts/android-emulator* || true
           rm -rf prebuilts/qemu-kernel* || true
-          
+        
           # Hapus versi compiler Clang lama (Sisakan r416183b1 untuk crDroid 8)
           find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
-          
-          # Hapus aplikasi bawaan AOSP yang tidak dipakai
-          rm -rf packages/apps/TV
-          rm -rf packages/apps/Car
           
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export USE_CCACHE=0
@@ -217,7 +213,7 @@ jobs:
           export NINJA_ARGS="-j2"
   
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
-          # Berjalan di latar belakang, mencetak log setiap 5 menit (300 detik)
+          # Berjalan di latar belakang, mencetak log setiap 5 menit
           while true; do
             echo "=========================================="
             echo "WAKTU: $(date)"
@@ -231,9 +227,13 @@ jobs:
   
           echo "=== START COMPILING RAW IMAGES ==="
           m bootimage systemimage vendorimage -j2
-            
-          - name: Upload ROM Artifact
-            uses: actions/upload-artifact@v4
-            with:
-              name: crDroid-X663-Build
-              path: ~/crdroid/out/dist/*.zip
+  
+      # PERHATIKAN POSISI INI: Harus sejajar dengan '- name: Build ROM'
+      - name: Upload ROM Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crDroid-X663-Raw-Images
+          path: |
+            ~/crdroid/out/target/product/X663/boot.img
+            ~/crdroid/out/target/product/X663/super.img
+          compression-level: 6
