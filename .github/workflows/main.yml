@@ -225,10 +225,13 @@ jobs:
   
           echo "=== START COMPILING BOOT IMAGE ONLY ==="
           m bootimage -j2
+          
+          echo "=== VERIFIKASI HASIL FILE ==="
+          ls -lah out/target/product/X663/boot* || echo "File boot.img belum tercipta!"
   
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
-         name: crDroid-X663-Boot-Image
-         path: ~/crdroid/out/target/product/X663/boot.img
-         compression-level: 6
+          name: crDroid-X663-Boot-Image
+          path: /home/runner/crdroid/out/target/product/X663/boot.img
+          compression-level: 6
