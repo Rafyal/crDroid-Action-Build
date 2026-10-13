@@ -1,0 +1,243 @@
+name: crDroid Build (Free Tier Survival)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build ROM
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Membajak Ruang Penyimpanan (Free Disk Space)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+
+      - name: Set up Environment
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git-core gnupg flex bison build-essential zip curl zlib1g-dev gcc-multilib g++-multilib libc6-dev-i386 libncurses5 libncurses-dev x11proto-core-dev libx11-dev lib32z1-dev libgl1-mesa-dev libxml2-utils xsltproc unzip fontconfig
+
+      
+      - name: Install Repo Tool
+        run: |
+          mkdir -p ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          sudo ln -sf ~/bin/repo /usr/bin/repo
+
+      - name: Initialize & Sync crDroid (Core System)
+        run: |
+          mkdir -p ~/crdroid
+          cd ~/crdroid
+          git config --global user.name "Rafyal"
+          git config --global user.email "rafyal991@gmail.com"
+          repo init -u https://github.com/crdroidandroid/android.git -b 12.1 --depth=1
+          
+          echo "=== MEMULAI SINKRONISASI (BULLETPROOF MODE) ==="
+          # Looping otomatis maksimal 5 kali (setiap putaran diberi waktu maksimal 40 menit)
+          # Jika sukses 100%, sistem akan "break" (keluar dari loop) dan lanjut ke kompilasi.
+          for i in {1..5}; do
+            echo "Percobaan sinkronisasi ke-$i..."
+            if timeout 40m repo sync -c -j4 --force-sync --no-clone-bundle --no-tags --optimized-fetch --prune; then
+              echo "Sinkronisasi berhasil 100%!"
+              break
+            else
+              echo "Koneksi RTO atau batas waktu habis. Mengulang sisa unduhan dalam 5 detik..."
+              sleep 5
+            fi
+          done
+
+      - name: Clone Device, Vendor, Kernel & crDroid Vendor Trees
+        run: |
+          cd ~/crdroid
+          # Hapus versi sebelumnya yang salah cabang
+          rm -rf vendor/crdroid
+          
+          # Kloning Tree Perangkatmu
+          git clone --depth=1 https://github.com/Rafyal/android_device_infinix_x663.git device/infinix/X663
+          git clone --depth=1 https://github.com/Rafyal/android_vendor_infinix_x663.git vendor/infinix/X663
+          git clone --depth=1 https://github.com/Rafyal/android_kernel_infinix_x663.git device/infinix/X663-kernel
+
+          # Bersihkan sisa kloning sebelumnya
+          rm -rf device/xiaomi/mt6768-common
+          rm -rf vendor/xiaomi/mt6768-common
+
+          # Kloning Common Tree MT6768 (Device) khusus Android 12.1
+          git clone --depth=1 -b lineage-19.1 https://github.com/mt6768-dev/android_device_xiaomi_mt6768-common.git device/xiaomi/mt6768-common
+
+          # Kloning Common Vendor MT6768 (Default branch) menggunakan URL yang BENAR
+          git clone --depth=1 https://github.com/mt6768-dev/proprietary_vendor_xiaomi_mt6768-common.git vendor/xiaomi/mt6768-common
+
+          # Membuat direktori jika belum ada
+          mkdir -p hardware/mediatek
+
+          # Membuat file Android.bp berisi deklarasi namespace kosong
+          echo 'soong_namespace {
+          }' > hardware/mediatek/Android.bp
+
+          # Kloning vendor crDroid khusus basis Android 12.1
+          git clone --depth=1 -b 12.1 https://github.com/crdroidandroid/android_vendor_crdroid.git vendor/crdroid
+      
+      - name: Membajak Ruang Penyimpanan (Free Disk Space)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: false
+          
+      - name: Memompa RAM Virtual (Swap 8GB)
+        uses: pierotofy/set-swap-space@master
+        with:
+          swap-size-gb: 5
+
+        
+
+      - name: Build ROM 
+        run: |
+          set +e
+          cd ~/crdroid
+
+          echo "=== PEMBERSIHAN KONFLIK MURNI ==="
+          rm -rf vendor/lineage/build/soong
+          rm -rf vendor/lineage/build/tasks
+          rm -rf vendor/lineage/charger
+          rm -f vendor/lineage/prebuilt/common/Android.mk
+
+          echo "=== PATCH KECIL & HARDCODE SOONG ==="
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -0777 -pi -e 's/install_symlink\s*\{[^}]*\}//gs' {} +
+          sed -i '/BluetoothInstrumentationTests/d' platform_testing/build/tasks/tests/instrumentation_test_list.mk || true
+          sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
+          sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
+
+          # Ganti dengan path bawaan Android agar lolos dari blokir Sandbox!
+          sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
+          
+          # PERBAIKAN KRUSIAL DI BARIS INI:
+          sed -i 's/$(KERNEL_MAKE_CMD)/prebuilts\/build-tools\/linux-x86\/bin\/make/g' vendor/crdroid/build/soong/Android.bp || true
+          
+          sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
+          
+          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
+         
+          sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
+          sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
+          sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
+          perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
+
+          echo "=== BYPASS DEX BOOT JAR ERROR ==="
+          find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
+
+          echo "=== FIX MISSING WEBVIEW ==="
+          rm -rf external/chromium-webview
+          repo sync external/chromium-webview -c --force-sync --no-clone-bundle --no-tags
+
+          echo "=== FIX ERROR HEALTH AIDL & KERNEL & OTA ==="
+          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/aidl/default/Android.bp || true
+          sed -i '/health_charging_control_defaults/d' hardware/lineage/interfaces/health/default/Android.bp || true
+
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB) ==="
+          rm -rf .repo/
+          
+          echo "=== FIX BOOTLOADER MESSAGE OFFSET ==="
+          sed -i 's/BOARD_RECOVERY_BLDRMSG_OFFSET/0/g' bootable/recovery/bootloader_message/include/bootloader_message/bootloader_message.h
+          
+          # Hapus paksa flag yang menggagalkan pembuatan file OTA (Penyebab error "mv: Needs 2 arguments")
+          find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
+          
+          # Tangani perbedaan nama file Kernel
+          if [ -f device/infinix/X663-kernel/kernel ]; then
+              cp device/infinix/X663-kernel/kernel device/infinix/X663-kernel/Image.gz
+          elif [ -f device/infinix/X663-kernel/Image.gz-dtb ]; then
+              cp device/infinix/X663-kernel/Image.gz-dtb device/infinix/X663-kernel/Image.gz
+          elif [ ! -f device/infinix/X663-kernel/Image.gz ]; then
+              touch device/infinix/X663-kernel/Image.gz
+          fi
+
+          echo "=== BYPASS KERNEL HEADERS INSTALL ==="
+          echo "headers_install:" > device/infinix/X663-kernel/Makefile
+          
+          echo "=== INISIALISASI LINGKUNGAN BUILD ==="
+          source build/envsetup.sh
+          lunch crdroid_X663-userdebug
+
+          echo "=== AUTO-PRUNE: PEMOTONG DEPENDENSI XIAOMI OTOMATIS ==="
+          if [ -f vendor/xiaomi/mt6768-common/Android.bp ]; then
+            for i in {1..25}; do
+              SOONG_OUTPUT=$(m nothing 2>&1 || true)
+              MISSING_MODS=$(echo "$SOONG_OUTPUT" | grep -oP 'depends on undefined module "\K[^"]+' | sort -u)
+              if [ -z "$MISSING_MODS" ]; then break; fi
+              for mod in $MISSING_MODS; do
+                sed -i "s/\"$mod\",//g" vendor/xiaomi/mt6768-common/Android.bp
+                sed -i "s/\"$mod\"//g" vendor/xiaomi/mt6768-common/Android.bp
+              done
+            done
+          fi
+          
+          echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
+          rm -rf .repo/
+          rm -rf prebuilts/clang/host/darwin-x86
+          rm -rf prebuilts/clang/host/windows-x86
+          rm -rf prebuilts/gcc/darwin-x86
+          rm -rf prebuilts/gcc/windows-x86
+          rm -rf prebuilts/android-emulator* || true
+          rm -rf prebuilts/qemu-kernel* || true
+          find prebuilts/clang/host/linux-x86 -maxdepth 1 -type d -name "clang-*" ! -name "clang-r416183b1" -exec rm -rf {} +
+          rm -rf packages/apps/TV
+          rm -rf packages/apps/Car
+          
+          echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
+          export USE_CCACHE=0
+          export MALLOC_ARENA_MAX=2
+          export _JAVA_OPTIONS="-Xmx4g"
+          export WITH_DEXPREOPT=false
+          export NINJA_HIGHMEM_NUM_JOBS=1
+          export NINJA_ARGS="-j2"
+          
+          echo "=== FIX VENDOR PARTITION TARGET ==="
+          # Memaksa sistem mencetak vendor.img dengan format ext4
+          echo "BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4" >> device/infinix/X663/BoardConfig.mk
+  
+          echo "=== START BACKGROUND RESOURCE MONITOR ==="
+          while true; do
+            echo "=========================================="
+            echo "WAKTU: $(date)"
+            free -h
+            df -h /
+            echo "=========================================="
+            sleep 300
+          done &
+  
+          echo "=== START COMPILING VENDOR IMAGE ONLY ==="
+          # Gunakan 'mka' untuk memanggil ninja secara optimal
+          mka vendorimage -j2
+          
+          echo "=== VERIFIKASI HASIL FILE ==="
+          echo "Mencari file vendor.img yang berhasil dirakit:"
+          ls -lah out/target/product/X663/vendor*.img || echo "File vendor.img belum tercipta!"
+  
+      # Harus sejajar dengan '- name: Build Vendor ROM'
+      - name: Upload Vendor Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: crDroid-X663-Vendor-Image
+          path: /home/runner/crdroid/out/target/product/X663/vendor.img
+          compression-level: 6
