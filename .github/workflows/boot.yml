@@ -230,10 +230,10 @@ jobs:
           echo "=== START COMPILING BOOT IMAGE ONLY ==="
           m bootimage -j2
   
-      # Ganti blok Upload Artifact di bawah menjadi ini:
+      # Menangkap SEMUA file image yang terbentuk (system_a.img, system_ext_a.img, dll)
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: crDroid-X663-System-Image
-          path: /home/runner/crdroid/out/target/product/X663/system.img
+          name: crDroid-X663-System-Images
+          path: /home/runner/crdroid/out/target/product/X663/*.img
           compression-level: 6
