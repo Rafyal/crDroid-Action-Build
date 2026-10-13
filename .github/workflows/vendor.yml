@@ -1,4 +1,4 @@
-name: crDroid Build (Free Tier Survival)
+name: crDroid Build (Vendor)
 
 on:
   workflow_dispatch:
