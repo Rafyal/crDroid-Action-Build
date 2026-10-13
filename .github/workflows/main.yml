@@ -223,15 +223,12 @@ jobs:
             sleep 300
           done &
   
-          echo "=== START COMPILING RAW IMAGES ==="
-          m bootimage systemimage vendorimage -j2
+          echo "=== START COMPILING BOOT IMAGE ONLY ==="
+          m bootimage -j2
   
-      # PERHATIKAN POSISI INI: Harus sejajar dengan '- name: Build ROM'
       - name: Upload ROM Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: crDroid-X663-Raw-Images
-          path: |
-            ~/crdroid/out/target/product/X663/boot.img
-            ~/crdroid/out/target/product/X663/super.img
-          compression-level: 6
+      uses: actions/upload-artifact@v4
+      with:
+        name: crDroid-X663-Boot-Image
+        path: ~/crdroid/out/target/product/X663/boot.img
+        compression-level: 6
