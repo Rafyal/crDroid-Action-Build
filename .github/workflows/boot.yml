@@ -214,16 +214,25 @@ jobs:
           # Menambahkan ukuran partisi boot 64MB secara dinamis
           echo "BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864" >> device/infinix/X663/BoardConfig.mk
           
-          echo "=== PENANGANAN KERNEL & DTB UTAMA ==="
+          echo "=== FIX KERNEL & DTB (ULTIMATE) ==="
+          # 1. Pastikan file asli ditarik sepenuhnya (jaga-jaga jika tersangkut di Git LFS)
+          cd device/infinix/X663-kernel
+          git lfs pull || true
+          cd ../../../
+  
+          # 2. Letakkan Kernel di tempat yang mudah ditemukan
           cp device/infinix/X663-kernel/prebuilt/Image.gz device/infinix/X663-kernel/Image.gz
-          
-          # Buat folder khusus untuk DTB agar terbaca oleh variabel _DIR
+  
+          # 3. Masukkan DTB ke dalam folder khusus (karena _DIR wajib berupa folder)
           mkdir -p device/infinix/X663-kernel/dtb_dir
           cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb_dir/dtb
-          
-          # Revisi jalur BoardConfig secara dinamis ke folder yang baru dibuat
-          sed -i 's|device/infinix/X663-kernel/dtb|device/infinix/X663-kernel/dtb_dir|g' device/infinix/X663/BoardConfig.mk
-          
+  
+          # 4. Timpa aturan BoardConfig.mk dari baris paling bawah
+          echo "" >> device/infinix/X663/BoardConfig.mk
+          echo "BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864" >> device/infinix/X663/BoardConfig.mk
+          echo "TARGET_PREBUILT_KERNEL := device/infinix/X663-kernel/Image.gz" >> device/infinix/X663/BoardConfig.mk
+          echo "BOARD_PREBUILT_DTBIMAGE_DIR := device/infinix/X663-kernel/dtb_dir" >> device/infinix/X663/BoardConfig.mk
+          echo "BOARD_INCLUDE_DTB_IN_BOOTIMG := true" >> device/infinix/X663/BoardConfig.mk
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
           while true; do
             echo "=========================================="
