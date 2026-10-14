@@ -235,5 +235,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: crDroid-X663-System-Image
-          path: /home/runner/crdroid/out/target/product/X663/system.img
+          path: /home/runner/crdroid/out/target/product/X663/*.img
           compression-level: 6
