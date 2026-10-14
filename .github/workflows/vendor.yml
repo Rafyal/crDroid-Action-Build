@@ -125,40 +125,24 @@ jobs:
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
 
-          # PERBAIKAN KRUSIAL DI BARIS INI:
-          sed -i 's/$(KERNEL_MAKE_CMD)/prebuilts\/build-tools\/linux-x86\/bin\/make/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
-          sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
-          sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
-          perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
-  
-          echo "=== MENGATASI DUPLIKASI ELF CHECK (ULTIMATE FIX) ==="
-          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -pi -e 's/check_elf_files\s*:\s*(true|false)\s*,?//g' {} +
-          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -pi -e 's/(name:\s*".*?",)/$1 check_elf_files: false,/g' {} +
           # Ganti dengan path bawaan Android agar lolos dari blokir Sandbox!
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
-          
-          # PERBAIKAN KRUSIAL DI BARIS INI:
+
+          # PERBAIKAN KRUSIAL SOONG KERNEL:
           sed -i 's/$(KERNEL_MAKE_CMD)/prebuilts\/build-tools\/linux-x86\/bin\/make/g' vendor/crdroid/build/soong/Android.bp || true
-          
           sed -i 's/$(KERNEL_MAKE_FLAGS)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(TARGET_KERNEL_SOURCE)/device\/infinix\/X663-kernel/g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(KERNEL_ARCH)/arm64/g' vendor/crdroid/build/soong/Android.bp || true
-          
           sed -i 's/$(KERNEL_BUILD_OUT_PREFIX)//g' vendor/crdroid/build/soong/Android.bp || true
-         
           sed -i 's/$(KERNEL_CROSS_COMPILE)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/"hardware\/mediatek\/libmtkperf_client"/"."/g' vendor/xiaomi/mt6768-common/Android.bp || true
           sed -i 's/"hardware\/xiaomi"//g' vendor/xiaomi/mt6768-common/Android.bp || true
           perl -0777 -pi -e 's/imports\s*:\s*\[.*?\]/imports: []/gs' vendor/xiaomi/mt6768-common/Android.bp || true
 
-          # BARIS BARU: Matikan pengecekan ELF untuk semua modul prebuilt MediaTek
-          perl -pi -e 's/(name:\s*".*?",)/$1 check_elf_files: false,/g' vendor/xiaomi/mt6768-common/Android.bp || true
+          echo "=== MENGATASI DUPLIKASI ELF CHECK (ULTIMATE FIX) ==="
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -pi -e 's/check_elf_files\s*:\s*(true|false)\s*,?//g' {} +
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -pi -e 's/(name:\s*".*?",)/$1 check_elf_files: false,/g' {} +
 
           echo "=== BYPASS DEX BOOT JAR ERROR ==="
           find device/ vendor/ hardware/ build/ -name "*.mk" -type f -exec perl -pi -e 's/mediatek-common//g; s/mediatek-framework//g; s/mediatek-ims-common//g; s/mediatek-telecom-common//g; s/mediatek-telephony-common//g; s/mediatek-ims-base//g; s/mediatek-telephony-base//g' {} +
@@ -173,13 +157,13 @@ jobs:
 
           echo "=== MENGOSONGKAN RUANG DISK EKSTRA (~50GB) ==="
           rm -rf .repo/
-          
+
           echo "=== FIX BOOTLOADER MESSAGE OFFSET ==="
           sed -i 's/BOARD_RECOVERY_BLDRMSG_OFFSET/0/g' bootable/recovery/bootloader_message/include/bootloader_message/bootloader_message.h
-          
-          # Hapus paksa flag yang menggagalkan pembuatan file OTA (Penyebab error "mv: Needs 2 arguments")
+
+          # Hapus paksa flag yang menggagalkan pembuatan file OTA
           find device vendor -name "*.mk" -type f -exec sed -i '/TARGET_SKIP_OTA_PACKAGE/d' {} +
-          
+
           # Tangani perbedaan nama file Kernel
           if [ -f device/infinix/X663-kernel/kernel ]; then
               cp device/infinix/X663-kernel/kernel device/infinix/X663-kernel/Image.gz
@@ -191,7 +175,7 @@ jobs:
 
           echo "=== BYPASS KERNEL HEADERS INSTALL ==="
           echo "headers_install:" > device/infinix/X663-kernel/Makefile
-          
+
           echo "=== INISIALISASI LINGKUNGAN BUILD ==="
           source build/envsetup.sh
           lunch crdroid_X663-userdebug
@@ -208,7 +192,7 @@ jobs:
               done
             done
           fi
-          
+
           echo "=== MENGOSONGKAN RUANG DISK EKSTRA (SAFE EXTREME MODE) ==="
           rm -rf .repo/
           rm -rf prebuilts/clang/host/darwin-x86
@@ -217,8 +201,7 @@ jobs:
           rm -rf prebuilts/gcc/windows-x86
           rm -rf prebuilts/android-emulator* || true
           rm -rf prebuilts/qemu-kernel* || true
-        
-          
+
           echo "=== PREPARING COMPILE (ULTIMATE SAFE MODE) ==="
           export USE_CCACHE=0
           export MALLOC_ARENA_MAX=2
@@ -226,12 +209,12 @@ jobs:
           export WITH_DEXPREOPT=false
           export NINJA_HIGHMEM_NUM_JOBS=1
           export NINJA_ARGS="-j2"
-          
+
           echo "=== FIX VENDOR PARTITION TARGET ==="
           # Mendeklarasikan direktori output dan format file system untuk vendor
           echo "TARGET_COPY_OUT_VENDOR := vendor" >> device/infinix/X663/BoardConfig.mk
           echo "BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4" >> device/infinix/X663/BoardConfig.mk
-    
+
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
           while true; do
             echo "=========================================="
@@ -241,15 +224,15 @@ jobs:
             echo "=========================================="
             sleep 300
           done &
-  
+
           echo "=== START COMPILING VENDOR IMAGE ONLY ==="
           # Gunakan 'mka' untuk memanggil ninja secara optimal
           mka vendorimage -j2
-          
+
           echo "=== VERIFIKASI HASIL FILE ==="
           echo "Mencari file vendor.img yang berhasil dirakit:"
           ls -lah out/target/product/X663/vendor*.img || echo "File vendor.img belum tercipta!"
-  
+          
       # Harus sejajar dengan '- name: Build Vendor ROM'
       - name: Upload ROM Artifact
         uses: actions/upload-artifact@v4
