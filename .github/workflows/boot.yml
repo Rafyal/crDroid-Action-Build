@@ -215,10 +215,15 @@ jobs:
           echo "BOARD_BOOTIMAGE_PARTITION_SIZE := 67108864" >> device/infinix/X663/BoardConfig.mk
           
           echo "=== PENANGANAN KERNEL & DTB UTAMA ==="
-          # Memindahkan file dari folder prebuilt ke root folder kernel agar terbaca oleh BoardConfig
           cp device/infinix/X663-kernel/prebuilt/Image.gz device/infinix/X663-kernel/Image.gz
-          cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb
-  
+          
+          # Buat folder khusus untuk DTB agar terbaca oleh variabel _DIR
+          mkdir -p device/infinix/X663-kernel/dtb_dir
+          cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb_dir/dtb
+          
+          # Revisi jalur BoardConfig secara dinamis ke folder yang baru dibuat
+          sed -i 's|device/infinix/X663-kernel/dtb|device/infinix/X663-kernel/dtb_dir|g' device/infinix/X663/BoardConfig.mk
+          
           echo "=== START BACKGROUND RESOURCE MONITOR ==="
           while true; do
             echo "=========================================="
