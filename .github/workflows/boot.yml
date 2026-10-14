@@ -225,7 +225,7 @@ jobs:
   
           # 3. Masukkan DTB ke dalam folder khusus (karena _DIR wajib berupa folder)
           mkdir -p device/infinix/X663-kernel/dtb_dir
-          cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb_dir/dtb
+          cp device/infinix/X663-kernel/prebuilt/dtb device/infinix/X663-kernel/dtb_dir/mediatek.dtb
   
           # 4. Timpa aturan BoardConfig.mk dari baris paling bawah
           echo "" >> device/infinix/X663/BoardConfig.mk
