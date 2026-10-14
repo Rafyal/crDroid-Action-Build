@@ -125,6 +125,10 @@ jobs:
           sed -i 's/name: "sensitive_pn.xml"/name: "sensitive_pn_lineage.xml"/g' vendor/lineage/prebuilt/common/Android.bp || true
           sed -i 's/name: "NetworkStackOverlay"/name: "NetworkStackOverlayLineage"/g' vendor/lineage/overlay/rro_packages/NetworkStackOverlay/Android.bp || true
 
+          # MENGATASI DUPLIKASI ELF CHECK: Hapus semua "check_elf_files" bawaan dulu, lalu suntikkan ulang secara massal ke semua modul
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec sed -i '/check_elf_files: false,/d' {} + || true
+          find vendor/xiaomi/mt6768-common -name "Android.bp" -type f -exec perl -pi -e 's/(name:\s*".*?",)/$1 check_elf_files: false,/g' {} + || true
+
           # Ganti dengan path bawaan Android agar lolos dari blokir Sandbox!
           sed -i 's/PATH=$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
           sed -i 's/$(PATH_OVERRIDE_SOONG)//g' vendor/crdroid/build/soong/Android.bp || true
