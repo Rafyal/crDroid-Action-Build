@@ -75,54 +75,56 @@ jobs:
           done
 
       - name: Clone Friend's Device, Vendor & Kernel Trees
-        run: |
-          cd ~/lineage
-          BRANCH_FLAG=""
-          if [ -n "\${{ github.event.inputs.tree_branch }}" ]; then
-            BRANCH_FLAG="-b \${{ github.event.inputs.tree_branch }}"
-          fi
-
-          git clone --depth=1 \$BRANCH_FLAG https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
-          git clone --depth=1 \$BRANCH_FLAG https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
-          git clone --depth=1 \$BRANCH_FLAG https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
-          (cd device/infinix/X663-kernel && git lfs pull || true)
-
+        env:
+                TREE_BRANCH: ${{ github.event.inputs.tree_branch }}
+              run: |
+                cd ~/lineage
+                if [ -n "$TREE_BRANCH" ]; then
+                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
+                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
+                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
+                else
+                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
+                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
+                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
+                fi
+                (cd device/infinix/X663-kernel && git lfs pull || true)
       - name: Auto-Configure Kernel Path & Lineage Product Makefiles
         run: |
-          cd ~/lineage
-
-          echo "=== 1. Inspect Tree Layout ==="
-          ls -la device/infinix/X663
-          grep -rnE "TARGET_PREBUILT_KERNEL|TARGET_KERNEL_SOURCE|COMMON_LUNCH_CHOICES|PRODUCT_NAME" device/infinix/X663/ || true
-
-          echo "=== 2. Match Kernel Directory Expected by BoardConfig.mk ==="
-          KERNEL_PATH=\$(grep -E "TARGET_PREBUILT_KERNEL|TARGET_KERNEL_SOURCE" device/infinix/X663/BoardConfig.mk | head -n 1 | awk -F':=' '{print \$2}' | xargs)
-          echo "Detected kernel path in BoardConfig.mk: \$KERNEL_PATH"
-          if [[ "\$KERNEL_PATH" == kernel/infinix/* ]]; then
-            TARGET_DIR=$(dirname "$KERNEL_PATH")
-            mkdir -p "$(dirname "$TARGET_DIR")"
-            ln -sfn "$PWD/device/infinix/X663-kernel" "$TARGET_DIR"
-            echo "Linked device/infinix/X663-kernel -> \$TARGET_DIR"
-          fi
-
-          echo "=== 3. Ensure lineage_X663 Target Exists ==="
-          if [ ! -f device/infinix/X663/lineage_X663.mk ]; then
-            ORIG_MK=\$(find device/infinix/X663 -maxdepth 1 -name "*_X663.mk" | head -n 1)
-            if [ -n "\$ORIG_MK" ]; then
-              OLD_PREFIX=$(basename "$ORIG_MK" _X663.mk)
-              echo "Converting \${OLD_PREFIX}_X663.mk -> lineage_X663.mk"
-              cp "\$ORIG_MK" device/infinix/X663/lineage_X663.mk
-              sed -i "s/${OLD_PREFIX}_X663/lineage_X663/g; s/vendor\/${OLD_PREFIX}/vendor\/lineage/g" device/infinix/X663/lineage_X663.mk
-              sed -i "s/\${OLD_PREFIX}_X663/lineage_X663/g" device/infinix/X663/AndroidProducts.mk
-            fi
-          fi
-
-          echo "=== 4. Check If Extra MediaTek Hardware Repos Are Referenced ==="
-          if grep -rq "hardware/mediatek" device/infinix/X663 vendor/infinix/X663; then
-            if [ ! -d hardware/mediatek ]; then
-              git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_hardware_mediatek.git hardware/mediatek || true
-            fi
-          fi
+                cd ~/lineage
+      
+                echo "=== 1. Inspect Tree Layout ==="
+                ls -la device/infinix/X663
+                grep -rnE "TARGET_PREBUILT_KERNEL|TARGET_KERNEL_SOURCE|COMMON_LUNCH_CHOICES|PRODUCT_NAME" device/infinix/X663/ || true
+      
+                echo "=== 2. Match Kernel Directory Expected by BoardConfig.mk ==="
+                KERNEL_PATH=\$(grep -E "TARGET_PREBUILT_KERNEL|TARGET_KERNEL_SOURCE" device/infinix/X663/BoardConfig.mk | head -n 1 | awk -F':=' '{print \$2}' | xargs)
+                echo "Detected kernel path in BoardConfig.mk: \$KERNEL_PATH"
+                if [[ "\$KERNEL_PATH" == kernel/infinix/* ]]; then
+                  TARGET_DIR=$(dirname "$KERNEL_PATH")
+                  mkdir -p "$(dirname "$TARGET_DIR")"
+                  ln -sfn "$PWD/device/infinix/X663-kernel" "$TARGET_DIR"
+                  echo "Linked device/infinix/X663-kernel -> \$TARGET_DIR"
+                fi
+      
+                echo "=== 3. Ensure lineage_X663 Target Exists ==="
+                if [ ! -f device/infinix/X663/lineage_X663.mk ]; then
+                  ORIG_MK=\$(find device/infinix/X663 -maxdepth 1 -name "*_X663.mk" | head -n 1)
+                  if [ -n "\$ORIG_MK" ]; then
+                    OLD_PREFIX=$(basename "$ORIG_MK" _X663.mk)
+                    echo "Converting \${OLD_PREFIX}_X663.mk -> lineage_X663.mk"
+                    cp "\$ORIG_MK" device/infinix/X663/lineage_X663.mk
+                    sed -i "s/${OLD_PREFIX}_X663/lineage_X663/g; s/vendor\/${OLD_PREFIX}/vendor\/lineage/g" device/infinix/X663/lineage_X663.mk
+                    sed -i "s/\${OLD_PREFIX}_X663/lineage_X663/g" device/infinix/X663/AndroidProducts.mk
+                  fi
+                fi
+      
+                echo "=== 4. Check If Extra MediaTek Hardware Repos Are Referenced ==="
+                if grep -rq "hardware/mediatek" device/infinix/X663 vendor/infinix/X663; then
+                  if [ ! -d hardware/mediatek ]; then
+                    git clone --depth=1 -b lineage-19.1 https://github.com/LineageOS/android_hardware_mediatek.git hardware/mediatek || true
+                  fi
+                fi
 
       - name: Compile Partition Images
         run: |
