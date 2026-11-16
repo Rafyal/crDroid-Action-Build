@@ -76,19 +76,20 @@ jobs:
 
       - name: Clone Friend's Device, Vendor & Kernel Trees
         env:
-                TREE_BRANCH: ${{ github.event.inputs.tree_branch }}
-              run: |
-                cd ~/lineage
-                if [ -n "$TREE_BRANCH" ]; then
-                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
-                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
-                  git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
-                else
-                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
-                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
-                  git clone --depth=1 https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
-                fi
-                (cd device/infinix/X663-kernel && git lfs pull || true)
+            TREE_BRANCH: ${{ github.event.inputs.tree_branch }}
+          run: |
+            cd ~/lineage
+            if [ -n "$TREE_BRANCH" ]; then
+              git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
+              git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
+              git clone --depth=1 -b "$TREE_BRANCH" https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
+            else
+              git clone --depth=1 https://github.com/ALBINsRAJ2025/android_device_infinix_X663.git device/infinix/X663
+              git clone --depth=1 https://github.com/ALBINsRAJ2025/android_vendor_infinix_X663.git vendor/infinix/X663
+              git clone --depth=1 https://github.com/ALBINsRAJ2025/android_kernel_infinix_X663.git device/infinix/X663-kernel
+            fi
+            (cd device/infinix/X663-kernel && git lfs pull || true)
+          
       - name: Auto-Configure Kernel Path & Lineage Product Makefiles
         run: |
                 cd ~/lineage
