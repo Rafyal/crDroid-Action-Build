@@ -1,0 +1,19 @@
+name: Check Runner Specs
+
+on:
+  workflow_dispatch:
+
+jobs:
+  specs:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Print Hardware & Storage Specs
+        run: |
+          echo "=== CPU ==="
+          lscpu | grep -E "Model name|CPU\(s\)|Thread|Core"
+          echo "=== RAM & SWAP ==="
+          free -h
+          echo "=== DISK PARTITIONS ==="
+          df -h
+          echo "=== BLOCK DEVICES ==="
+          lsblk
